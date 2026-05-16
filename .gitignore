@@ -1,0 +1,22 @@
+# OS / editor noise
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Build / cache outputs (this is a static site — nothing should be generated, but just in case)
+node_modules/
+dist/
+.cache/
+
+# Per-user sandbox the setup script creates
+ncs205-sandbox/
+
+# Local-only env or notes
+.env
+*.local
+notes.local.md
