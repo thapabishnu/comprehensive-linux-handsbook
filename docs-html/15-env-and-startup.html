@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>15 · Environment &amp; startup — Mentor's Guide to Linux</title>
+<meta name="description" content="PATH, aliases, exports, login vs interactive shells, ~/.bashrc vs ~/.profile, cron environment." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="brand">
+    <a href="index.html" style="border:none; color: inherit; display: contents;">
+      <span class="mark">/&gt;</span>
+      <span>The Mentor's Guide to Linux</span>
+    </a>
+    <span class="sub">NCS 205 handbook</span>
+  </div>
+  <div class="right">
+    <span class="crumbs"><a href="index.html" style="color: inherit; border: none;">HOME</a> / <strong>MODULE 15</strong></span>
+    <button class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+      <span class="icon">☼</span><span class="label">PAPER</span>
+    </button>
+    <button class="menu-btn" aria-label="Open table of contents" aria-expanded="false">MENU</button>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="sidebar" id="sidebar" aria-label="Module navigation"></aside>
+
+  <main class="main" id="main">
+    <article class="module">
+      <div class="meta-row">
+        <span><span class="label">MODULE</span>15</span>
+        <span><span class="label">MAPS TO</span>LAB 56</span>
+        <span><span class="label">TIME</span>~25 min</span>
+      </div>
+
+      <h1>Environment, PATH, and startup files</h1>
+      <p class="lede">"It works in my shell but not in cron" — the answer is here.</p>
+
+      <h2 id="why"><span class="secnum">§1</span>Why this matters</h2>
+      <p>Every shell session inherits an <strong>environment</strong> and runs <strong>startup files</strong>. Once you understand which file gets read when, the mystery disappears.</p>
+
+      <h2 id="mental-model"><span class="secnum">§2</span>Mental model</h2>
+      <p>The shell has two big knobs:</p>
+      <ul>
+        <li><strong>Environment variables</strong> — name/value pairs exported to <em>child</em> processes (e.g. <code>PATH</code>, <code>HOME</code>, <code>LANG</code>). View with <code>env</code>. Set with <code>export NAME=value</code>.</li>
+        <li><strong>Shell variables</strong> — set in the current shell only, not exported.</li>
+      </ul>
+      <p>A subshell inherits env vars but cannot change its parent's. That's why <code>cd</code> in a script doesn't change your interactive directory.</p>
+
+      <h3>Startup file order</h3>
+      <p>Bash reads different files depending on <em>how</em> it was started:</p>
+      <table>
+        <thead><tr><th>Shell type</th><th>Files read (in order)</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Login shell</strong> (SSH, first console)</td><td><code>/etc/profile</code> → <code>/etc/profile.d/*.sh</code> → first found: <code>~/.bash_profile</code>, <code>~/.bash_login</code>, <code>~/.profile</code></td></tr>
+          <tr><td><strong>Interactive non-login</strong> (new terminal in GUI)</td><td><code>/etc/bash.bashrc</code> → <code>~/.bashrc</code></td></tr>
+          <tr><td><strong>Non-interactive</strong> (script run by <code>bash script.sh</code>)</td><td>only <code>$BASH_ENV</code> if set</td></tr>
+        </tbody>
+      </table>
+      <p>This is why a <code>PATH</code> export in <code>~/.bashrc</code> works in your terminal but not under cron — cron's bash is non-interactive.</p>
+
+      <p>Practical pattern:</p>
+      <ul>
+        <li>Put <strong>exports</strong> in <code>~/.profile</code> or <code>~/.bash_profile</code>.</li>
+        <li>Put <strong>aliases and functions</strong> in <code>~/.bashrc</code>.</li>
+        <li>Make <code>~/.bash_profile</code> source <code>~/.bashrc</code>:</li>
+      </ul>
+<pre data-lang="sh"><code><span class="tok-comment"># ~/.bash_profile</span>
+[ -r ~/.bashrc ] &amp;&amp; . ~/.bashrc</code></pre>
+
+      <h2 id="commands"><span class="secnum">§3</span>Core commands</h2>
+      <table>
+        <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>env</code></td><td>Show all environment variables</td></tr>
+          <tr><td><code>printenv NAME</code></td><td>Show one</td></tr>
+          <tr><td><code>export NAME=value</code></td><td>Set + export to children</td></tr>
+          <tr><td><code>unset NAME</code></td><td>Remove it</td></tr>
+          <tr><td><code>alias</code></td><td>List aliases</td></tr>
+          <tr><td><code>alias ll='ls -la'</code></td><td>Define one</td></tr>
+          <tr><td><code>unalias ll</code></td><td>Remove</td></tr>
+          <tr><td><code>type cmd</code></td><td>What is <code>cmd</code>? Alias / function / builtin / file.</td></tr>
+          <tr><td><code>which cmd</code></td><td>Find file in <code>$PATH</code></td></tr>
+          <tr><td><code>command -v cmd</code></td><td>Portable; works for aliases too</td></tr>
+          <tr><td><code>hash</code></td><td>Cached path lookups (<code>hash -r</code> to clear)</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Most-used environment variables</h3>
+      <table>
+        <thead><tr><th>Variable</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>PATH</code></td><td>Colon-separated dirs where shell looks for commands</td></tr>
+          <tr><td><code>HOME</code></td><td>Your home directory</td></tr>
+          <tr><td><code>USER</code> / <code>LOGNAME</code></td><td>Your username</td></tr>
+          <tr><td><code>SHELL</code></td><td>Your login shell</td></tr>
+          <tr><td><code>EDITOR</code> / <code>VISUAL</code></td><td>Default editor (used by <code>git commit</code>, <code>crontab -e</code>)</td></tr>
+          <tr><td><code>LANG</code> / <code>LC_ALL</code></td><td>Locale</td></tr>
+          <tr><td><code>TERM</code></td><td>Terminal type</td></tr>
+          <tr><td><code>TMPDIR</code></td><td>Where tools write tempfiles (default <code>/tmp</code>)</td></tr>
+          <tr><td><code>PS1</code></td><td>Your interactive prompt format</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="walkthrough"><span class="secnum">§4</span>Guided walkthrough</h2>
+<pre data-lang="sh"><code><span class="tok-comment"># inspect</span>
+<span class="tok-prompt">$ </span>env | head -10
+<span class="tok-prompt">$ </span>echo "$PATH"
+<span class="tok-prompt">$ </span>echo "$HOME"
+<span class="tok-prompt">$ </span>type cat
+<span class="tok-prompt">$ </span>type ll        <span class="tok-comment"># probably "not found"</span>
+<span class="tok-prompt">$ </span>which ls
+<span class="tok-prompt">$ </span>command -v ls
+
+<span class="tok-comment"># add a personal bin dir</span>
+<span class="tok-prompt">$ </span>mkdir -p ~/bin
+<span class="tok-prompt">$ </span>echo 'export PATH="$HOME/bin:$PATH"' &gt;&gt; ~/.profile
+<span class="tok-prompt">$ </span>source ~/.profile
+
+<span class="tok-prompt">$ </span>cat &gt; ~/bin/mytool &lt;&lt;'EOF'
+#!/bin/bash
+echo "mytool says: $@"
+EOF
+<span class="tok-prompt">$ </span>chmod +x ~/bin/mytool
+<span class="tok-prompt">$ </span>hash -r
+<span class="tok-prompt">$ </span>mytool hi
+
+<span class="tok-comment"># aliases</span>
+<span class="tok-prompt">$ </span>echo "alias ll='ls -la --color=auto'" &gt;&gt; ~/.bashrc
+<span class="tok-prompt">$ </span>echo "alias ..='cd ..'" &gt;&gt; ~/.bashrc
+<span class="tok-prompt">$ </span>. ~/.bashrc
+<span class="tok-prompt">$ </span>ll
+<span class="tok-prompt">$ </span>type ll        <span class="tok-comment"># "ll is aliased to ..."</span>
+
+<span class="tok-comment"># differentiate login vs non-login</span>
+<span class="tok-prompt">$ </span>bash -lc 'echo PATH=$PATH'
+<span class="tok-prompt">$ </span>bash -c  'echo PATH=$PATH'</code></pre>
+
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · keep startup files quiet</span>
+        <p>Never put <code>cd</code> or anything that prints into <code>~/.profile</code>. SSH-key login can fail silently if a startup file prints to stdout. Keep them quiet.</p>
+      </div>
+
+      <h2 id="gotchas"><span class="secnum">§5</span>Gotchas</h2>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · cron's environment is minimal</span>
+        <p><code>PATH</code> is just <code>/usr/bin:/bin</code>. If your script uses tools in <code>/usr/local/bin</code> or <code>~/bin</code>, it'll fail with "command not found." Set <code>PATH</code> in your script or use absolute paths.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · <code>~/.bashrc</code> vs <code>~/.bash_profile</code></span>
+        <p>One runs in interactive non-login, the other in login. Have one source the other to avoid double-config.</p>
+      </div>
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · <code>source</code> vs <code>bash script</code></span>
+        <p><code>source</code> (or <code>.</code>) runs in the current shell. <code>bash script.sh</code> runs in a new shell. Variables set inside a script don't survive — unless you source.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · don't put <code>./</code> in <code>PATH</code></span>
+        <p>Running random commands from the current directory is a classic privilege-escalation vector.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · <code>alias</code> doesn't take arguments</span>
+        <p>Use a function. <code>alias gco='git checkout'</code> works; <code>alias mkcd='mkdir $1 &amp;&amp; cd $1'</code> does NOT — <code>$1</code> is literal.</p>
+      </div>
+
+      <h2 id="drills"><span class="secnum">§6</span>On-the-spot exercises</h2>
+
+      <div class="exercise">
+        <p><span class="ex-id">E15.1</span>Find the full path of <code>python3</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>which python3
+<span class="tok-prompt">$ </span>command -v python3</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E15.2</span>Print <code>PATH</code> with each directory on its own line.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>echo "$PATH" | tr ':' '\n'</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E15.3</span>Add <code>~/scripts</code> to <code>PATH</code> permanently for login shells.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>echo 'export PATH="$HOME/scripts:$PATH"' &gt;&gt; ~/.profile
+<span class="tok-prompt">$ </span>source ~/.profile</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E15.4</span>Make <code>vim</code> your default editor.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>echo 'export EDITOR=vim' &gt;&gt; ~/.profile
+<span class="tok-prompt">$ </span>echo 'export VISUAL=vim' &gt;&gt; ~/.profile</code></pre>
+          <p>Two vars because some tools check one or the other. Git, crontab, sudoedit all honor <code>$EDITOR</code>.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E15.5</span>Set an alias <code>g=git</code> permanently.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>echo "alias g='git'" &gt;&gt; ~/.bashrc
+<span class="tok-prompt">$ </span>. ~/.bashrc</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E15.6</span>Write a function <code>mkcd</code> that creates a directory and <code>cd</code>s into it.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="bash"><code>mkcd() { mkdir -p "$1" &amp;&amp; cd "$1"; }
+# put in ~/.bashrc to make it permanent</code></pre>
+          <p>Functions take arguments; aliases don't.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E15.7</span>Tell the shell to forget where it found <code>ls</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>hash -r</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E15.8</span>Customize the prompt to show user@host and current dir.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code>export PS1='[\u@\h \W]\$ '</code></pre>
+          <p><code>\u</code> = username, <code>\h</code> = short hostname, <code>\W</code> = basename of cwd. <code>man bash</code> + <code>/PROMPTING</code> for the full vocabulary.</p>
+        </div></details>
+      </div>
+
+      <h2 id="scenario"><span class="secnum">§7</span>Real-world sysadmin scenario</h2>
+      <p><strong>"My cron job worked yesterday, fails today."</strong></p>
+<pre data-lang="cron" data-nocopy="true"><code>*/5 * * * * /home/you/backup.sh</code></pre>
+      <p>The script uses <code>mytool</code> from <code>~/bin</code>. Cron doesn't read <code>~/.profile</code>, so <code>PATH</code> is <code>/usr/bin:/bin</code>. Fix: absolute path, or set <code>PATH</code> inside the script:</p>
+<pre data-lang="bash"><code>#!/bin/bash
+set -euo pipefail
+export PATH="$HOME/bin:/usr/local/bin:/usr/bin:/bin"
+mytool --backup</code></pre>
+      <p>Or in the crontab itself:</p>
+<pre data-lang="cron" data-nocopy="true"><code>PATH=/home/you/bin:/usr/local/bin:/usr/bin:/bin
+*/5 * * * * /home/you/backup.sh</code></pre>
+      <p>This one class of bug accounts for a huge fraction of "cron failures."</p>
+
+      <h2 id="recap"><span class="secnum">§8</span>What to remember</h2>
+      <ul>
+        <li><code>PATH</code> is colon-separated; first match wins.</li>
+        <li>Login shells read <code>~/.profile</code>; interactive shells read <code>~/.bashrc</code>.</li>
+        <li>Cron is non-interactive — set <code>PATH</code> explicitly in scripts.</li>
+        <li>Aliases for shortcuts; <strong>functions</strong> when you need arguments.</li>
+        <li><code>type cmd</code> tells you exactly what the shell will run.</li>
+        <li>Keep startup files quiet.</li>
+      </ul>
+
+      <a class="next-card" href="16-users-and-admin.html">
+        <span class="label">NEXT · MODULE 16</span>
+        <span class="title">Users &amp; admin</span>
+        <span class="desc">/etc/passwd, useradd, sudo, the privilege model.</span>
+      </a>
+    </article>
+
+    <footer class="colophon">
+      <p>NCS 205 handbook · module 15 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
+    </footer>
+  </main>
+
+  <aside class="toc" aria-label="On this page">
+    <div class="toc-title">On this page</div>
+    <ul>
+      <li><a href="#why">§1 Why this matters</a></li>
+      <li><a href="#mental-model">§2 Mental model</a></li>
+      <li><a href="#commands">§3 Core commands</a></li>
+      <li><a href="#walkthrough">§4 Walkthrough</a></li>
+      <li><a href="#gotchas">§5 Gotchas</a></li>
+      <li><a href="#drills">§6 Exercises</a></li>
+      <li><a href="#scenario">§7 Scenario</a></li>
+      <li><a href="#recap">§8 What to remember</a></li>
+    </ul>
+  </aside>
+</div>
+
+<script src="assets/site.js"></script>
+</body>
+</html>

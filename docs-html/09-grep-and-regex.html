@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>09 · grep &amp; regex — Mentor's Guide to Linux</title>
+<meta name="description" content="grep, regular expressions (BRE/ERE/PCRE), the pattern grammar that pays back for a career." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="brand">
+    <a href="index.html" style="border:none; color: inherit; display: contents;">
+      <span class="mark">/&gt;</span>
+      <span>The Mentor's Guide to Linux</span>
+    </a>
+    <span class="sub">NCS 205 handbook</span>
+  </div>
+  <div class="right">
+    <span class="crumbs"><a href="index.html" style="color: inherit; border: none;">HOME</a> / <strong>MODULE 09</strong></span>
+    <button class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+      <span class="icon">☼</span><span class="label">PAPER</span>
+    </button>
+    <button class="menu-btn" aria-label="Open table of contents" aria-expanded="false">MENU</button>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="sidebar" id="sidebar" aria-label="Module navigation"></aside>
+
+  <main class="main" id="main">
+    <article class="module">
+      <div class="meta-row">
+        <span><span class="label">MODULE</span>09</span>
+        <span><span class="label">MAPS TO</span>LABS 20–22</span>
+        <span><span class="label">TIME</span>~40 min</span>
+      </div>
+
+      <h1>grep and regular expressions</h1>
+      <p class="lede">Regex is the most reusable skill in this entire course. Five hours of it pays back for a career.</p>
+
+      <h2 id="why"><span class="secnum">§1</span>Why this matters</h2>
+      <p>Every Linux job you ever do involves "find the lines that match X." Configs, logs, source code, output of other commands. <code>grep</code> is how. And <code>grep</code>'s pattern language — <strong>regular expressions</strong> — carries into Python, JavaScript, every editor, every database, every cloud console.</p>
+
+      <h2 id="mental-model"><span class="secnum">§2</span>Mental model</h2>
+      <p><code>grep</code> reads input line-by-line and prints lines matching a <em>pattern</em>. The pattern is either:</p>
+      <ul>
+        <li>A <strong>fixed string</strong> — <code>grep error log.txt</code> (treats <code>error</code> literally)</li>
+        <li>A <strong>regular expression</strong> — <code>grep '^ERROR' log.txt</code> (treats <code>^</code> as "start of line")</li>
+      </ul>
+
+      <p>There are several flavors of regex:</p>
+      <table>
+        <thead><tr><th>Flavor</th><th>Tool flag</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Basic Regex (BRE)</strong></td><td>default <code>grep</code></td><td><code>?</code>, <code>+</code>, <code>{}</code> need backslashes: <code>\?</code>, <code>\+</code></td></tr>
+          <tr><td><strong>Extended Regex (ERE)</strong></td><td><code>grep -E</code> (or <code>egrep</code>)</td><td>Modern operators work without escaping</td></tr>
+          <tr><td><strong>Perl-compat (PCRE)</strong></td><td><code>grep -P</code></td><td>Most powerful; lookaheads, lazy quantifiers</td></tr>
+          <tr><td><strong>Fixed string</strong></td><td><code>grep -F</code> (or <code>fgrep</code>)</td><td>No regex, fastest, safest when you mean a literal</td></tr>
+        </tbody>
+      </table>
+      <p>For NCS 205 and most daily work, <strong>ERE (<code>grep -E</code>)</strong> is the sweet spot.</p>
+
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · anchored vs floating</span>
+        <p>A pattern is <em>anchored</em> (matches at a position) or <em>floating</em> (matches anywhere). <code>^abc</code> is anchored to the start of a line; <code>abc</code> floats. Knowing which you want is half of writing a correct regex.</p>
+      </div>
+
+      <h2 id="flags"><span class="secnum">§3</span>Core grep flags</h2>
+      <table>
+        <thead><tr><th>Flag</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>-i</code></td><td>Case-insensitive</td></tr>
+          <tr><td><code>-v</code></td><td><strong>Invert</strong> — show lines that <em>don't</em> match</td></tr>
+          <tr><td><code>-n</code></td><td>Show line numbers</td></tr>
+          <tr><td><code>-c</code></td><td>Count matching lines</td></tr>
+          <tr><td><code>-l</code></td><td>Just print filenames that have matches</td></tr>
+          <tr><td><code>-L</code></td><td>Filenames that <em>don't</em> have matches</td></tr>
+          <tr><td><code>-r</code></td><td>Recursive (descend into directories)</td></tr>
+          <tr><td><code>-R</code></td><td>Recursive following symlinks</td></tr>
+          <tr><td><code>-w</code></td><td>Match whole words only</td></tr>
+          <tr><td><code>-x</code></td><td>Match the <strong>whole line</strong> only</td></tr>
+          <tr><td><code>-A N</code></td><td>Show N lines <strong>after</strong> each match</td></tr>
+          <tr><td><code>-B N</code></td><td>N lines <strong>before</strong></td></tr>
+          <tr><td><code>-C N</code></td><td>N lines of <strong>context</strong></td></tr>
+          <tr><td><code>-E</code></td><td>Use Extended Regex</td></tr>
+          <tr><td><code>-F</code></td><td>Fixed string (no regex)</td></tr>
+          <tr><td><code>-o</code></td><td>Print only the matched part, not the whole line</td></tr>
+          <tr><td><code>-e PAT</code></td><td>Add another pattern (you can <code>-e a -e b</code>)</td></tr>
+          <tr><td><code>-f FILE</code></td><td>Patterns from a file</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="regex"><span class="secnum">§4</span>Regex building blocks (ERE)</h2>
+
+      <h3>Single-character matchers</h3>
+      <table>
+        <thead><tr><th>Pattern</th><th>Matches</th></tr></thead>
+        <tbody>
+          <tr><td><code>a</code></td><td>The literal character <code>a</code></td></tr>
+          <tr><td><code>.</code></td><td><strong>Any</strong> single character</td></tr>
+          <tr><td><code>[abc]</code></td><td>One of <code>a</code>, <code>b</code>, <code>c</code></td></tr>
+          <tr><td><code>[a-z]</code></td><td>One lowercase letter</td></tr>
+          <tr><td><code>[A-Z0-9]</code></td><td>One uppercase letter or digit</td></tr>
+          <tr><td><code>[^abc]</code></td><td>One character <strong>not</strong> in the set</td></tr>
+          <tr><td><code>\d</code></td><td>Digit (PCRE only — for grep, use <code>[0-9]</code>)</td></tr>
+          <tr><td><code>\s</code></td><td>Whitespace (PCRE only — use <code>[[:space:]]</code>)</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Anchors</h3>
+      <table>
+        <thead><tr><th>Pattern</th><th>Matches</th></tr></thead>
+        <tbody>
+          <tr><td><code>^</code></td><td>Start of line</td></tr>
+          <tr><td><code>$</code></td><td>End of line</td></tr>
+          <tr><td><code>\b</code></td><td>Word boundary (in many flavors; safer: use <code>-w</code>)</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Quantifiers (how many of the previous thing)</h3>
+      <table>
+        <thead><tr><th>Pattern</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>*</code></td><td>Zero or more</td></tr>
+          <tr><td><code>+</code></td><td>One or more (ERE)</td></tr>
+          <tr><td><code>?</code></td><td>Zero or one (ERE)</td></tr>
+          <tr><td><code>{n}</code></td><td>Exactly n</td></tr>
+          <tr><td><code>{n,}</code></td><td>n or more</td></tr>
+          <tr><td><code>{n,m}</code></td><td>Between n and m</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Grouping and alternation</h3>
+      <table>
+        <thead><tr><th>Pattern</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>(abc)</code></td><td>Group — treat as one unit</td></tr>
+          <tr><td><code>a|b</code></td><td><code>a</code> or <code>b</code> (alternation in ERE)</td></tr>
+          <tr><td><code>(cat|dog)</code></td><td>"cat" or "dog"</td></tr>
+        </tbody>
+      </table>
+
+      <h3>POSIX character classes (portable)</h3>
+      <table>
+        <thead><tr><th>Class</th><th>Equivalent</th></tr></thead>
+        <tbody>
+          <tr><td><code>[[:digit:]]</code></td><td><code>[0-9]</code></td></tr>
+          <tr><td><code>[[:alpha:]]</code></td><td><code>[A-Za-z]</code></td></tr>
+          <tr><td><code>[[:alnum:]]</code></td><td><code>[A-Za-z0-9]</code></td></tr>
+          <tr><td><code>[[:space:]]</code></td><td>space, tab, newline</td></tr>
+          <tr><td><code>[[:upper:]]</code></td><td><code>[A-Z]</code></td></tr>
+          <tr><td><code>[[:lower:]]</code></td><td><code>[a-z]</code></td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · use <code>-E</code> by default</span>
+        <p>In BRE, <code>+</code>, <code>?</code>, <code>{}</code>, <code>|</code>, <code>()</code> are <em>literal characters</em>. To use them as operators you must backslash. ERE makes them operators directly. <strong>Use <code>grep -E</code> unless you have a reason not to.</strong></p>
+      </div>
+
+      <h2 id="walkthrough"><span class="secnum">§5</span>Guided walkthrough</h2>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cd ~/ncs205-sandbox/text/
+
+<span class="tok-comment"># fixed string</span>
+<span class="tok-prompt">$ </span>grep 200 access.log              <span class="tok-comment"># any line containing "200"</span>
+<span class="tok-prompt">$ </span>grep ' 200 ' access.log          <span class="tok-comment"># tighter — must have spaces around</span>
+
+<span class="tok-comment"># inverted</span>
+<span class="tok-prompt">$ </span>grep -v 200 access.log
+
+<span class="tok-comment"># case-insensitive</span>
+<span class="tok-prompt">$ </span>grep -i error lorem.txt
+
+<span class="tok-comment"># anchors</span>
+<span class="tok-prompt">$ </span>grep '^192' access.log
+<span class="tok-prompt">$ </span>grep '^[0-9]' access.log
+<span class="tok-prompt">$ </span>grep -E '^[A-Z][a-z]+' names.txt
+
+<span class="tok-comment"># alternation</span>
+<span class="tok-prompt">$ </span>grep -E '401|403|404' access.log
+
+<span class="tok-comment"># quantifier — extended</span>
+<span class="tok-prompt">$ </span>grep -E ' (4|5)[0-9]{2} ' access.log
+
+<span class="tok-comment"># whole word</span>
+<span class="tok-prompt">$ </span>grep -w book ~/ncs205-sandbox/text/lorem.txt
+
+<span class="tok-comment"># count + recursive</span>
+<span class="tok-prompt">$ </span>grep -rc TODO ~/ncs205-sandbox/
+
+<span class="tok-comment"># context</span>
+<span class="tok-prompt">$ </span>grep -n -A 1 -B 1 401 access.log
+
+<span class="tok-comment"># only the match</span>
+<span class="tok-prompt">$ </span>grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' access.log | sort -u</code></pre>
+
+      <p>That last line is genuinely useful — <code>-o</code> prints only the matched piece. Combined with regex it's a featherweight extractor.</p>
+
+      <h2 id="gotchas"><span class="secnum">§6</span>Gotchas</h2>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · always quote your patterns</span>
+        <p><code>grep ^ERROR file</code> lets the shell try to interpret <code>^</code>. <code>grep '^ERROR' file</code> doesn't. Single quotes also protect from <code>$</code>, <code>*</code>, etc.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · BRE vs ERE</span>
+        <p><code>grep '(cat|dog)' file</code> in BRE searches for the literal string <code>(cat|dog)</code>. Use <code>-E</code> or escape: <code>\(\)</code> and <code>\|</code>.</p>
+      </div>
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · greedy by default</span>
+        <p>Standard regex <code>.*</code> is greedy — matches as much as possible. There's no lazy <code>?</code> in BRE/ERE; you need <code>-P</code> for that. Workaround: <code>[^"]*</code> (between quotes, don't cross another quote).</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · grep matches anywhere on the line</span>
+        <p>Use <code>^...$</code> to anchor to the whole line, or <code>-x</code> to match only complete lines.</p>
+      </div>
+      <div class="callout callout-tip">
+        <span class="callout-label">Tip · <code>grep -F</code> is faster</span>
+        <p>If you're searching for a literal IP address, <code>grep -F '10.0.0.55'</code> skips the regex engine.</p>
+      </div>
+      <div class="callout callout-tip">
+        <span class="callout-label">Tip · don't grep yourself</span>
+        <p><code>ps aux | grep nginx</code> matches the literal <code>grep nginx</code> process. Use <code>ps aux | grep '[n]ginx'</code> — the bracket trick makes the regex not match itself.</p>
+      </div>
+
+      <h2 id="drills"><span class="secnum">§7</span>On-the-spot exercises</h2>
+
+      <div class="exercise">
+        <p><span class="ex-id">E9.1</span>In <code>names.txt</code>, find every last name beginning with <code>R</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>grep '^R' ~/ncs205-sandbox/text/names.txt</code></pre>
+          <p><code>^</code> = start of line.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E9.2</span>Count how many words in the dictionary contain the substring <code>book</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>grep -c book /usr/share/dict/words</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E9.3</span>Count words that <em>start</em> with <code>book</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>grep -c '^book' /usr/share/dict/words</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E9.4</span>From <code>access.log</code>, show all 4xx and 5xx responses.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>grep -E ' (4|5)[0-9]{2} ' ~/ncs205-sandbox/text/access.log</code></pre>
+          <p>Leading/trailing spaces avoid matching "401" inside a longer number.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E9.5</span>Display only <em>active</em> config lines in <code>/etc/ssh/ssh_config</code> (skip blank lines and comments).</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>grep -Ev '^\s*#|^\s*$' /etc/ssh/ssh_config</code></pre>
+          <p>Two patterns OR'd, inverted = "only real config lines."</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E9.6</span>Recursively, in <code>/etc/</code>, find every file mentioning your username.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo grep -r -l "$USER" /etc/ 2&gt;/dev/null</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E9.7</span>Show line numbers of every <code>export</code> line in <code>~/.bashrc</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>grep -nE '^[[:space:]]*export ' ~/.bashrc</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E9.8</span>Extract just the unique IP addresses from <code>access.log</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>grep -oE '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' ~/ncs205-sandbox/text/access.log | sort -u</code></pre>
+          <p><code>-o</code> prints only the matched piece. <code>sort -u</code> deduplicates.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E9.9</span>In <code>lorem.txt</code>, find lines containing <em>both</em> <code>regex</code> and <code>pattern</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>grep regex ~/ncs205-sandbox/text/lorem.txt | grep pattern</code></pre>
+          <p>No AND in regex — chain greps via a pipe.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E9.10</span>Find every line of <code>/etc/passwd</code> whose login shell is <code>/bin/false</code> or <code>/usr/sbin/nologin</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>grep -E ':(/bin/false|/usr/sbin/nologin)$' /etc/passwd</code></pre>
+        </div></details>
+      </div>
+
+      <h2 id="scenario"><span class="secnum">§8</span>Real-world sysadmin scenario</h2>
+      <p><strong>Incident.</strong> A customer reports 500 errors. You need to know: how many, which endpoints, which IPs.</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo zgrep ' 500 ' /var/log/nginx/access.log* | wc -l</code></pre>
+      <p><code>zgrep</code> works on <code>.gz</code> rotated logs without un-gzipping. Total: 412.</p>
+      <p>Now break it down:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo zgrep ' 500 ' /var/log/nginx/access.log* \
+  | grep -oE '"[A-Z]+ [^"]+"' \
+  | sort | uniq -c | sort -rn | head -10</code></pre>
+      <p>In 30 seconds, you have the top 10 endpoints responsible for the 500s. <strong><code>grep + sort + uniq -c + sort -rn + head</code></strong> is the most useful five-stage incantation in this entire guide.</p>
+
+      <h2 id="recap"><span class="secnum">§9</span>What to remember</h2>
+      <ul>
+        <li><code>grep</code> reads input line-by-line, prints matches.</li>
+        <li>Use <code>grep -E</code> (ERE) unless there's a reason not to.</li>
+        <li>Anchors: <code>^</code> start, <code>$</code> end. Char classes: <code>[abc]</code>, <code>[^abc]</code>, <code>[a-z]</code>.</li>
+        <li>Quantifiers: <code>*</code>, <code>+</code>, <code>?</code>, <code>{n}</code>, <code>{n,m}</code>.</li>
+        <li>Useful flags: <code>-i</code>, <code>-v</code>, <code>-n</code>, <code>-c</code>, <code>-l</code>, <code>-r</code>, <code>-w</code>, <code>-o</code>, <code>-A/-B/-C</code>.</li>
+        <li>Quote your patterns. Always.</li>
+        <li><code>grep ... | sort | uniq -c | sort -rn</code> — the investigation pipeline.</li>
+      </ul>
+      <p>A pocket reference: <a href="reference/cheatsheet-regex.html">regex cheatsheet</a>.</p>
+
+      <a class="next-card" href="10-find-and-xargs.html">
+        <span class="label">NEXT · MODULE 10</span>
+        <span class="title">find &amp; xargs</span>
+        <span class="desc">Locate files by any criterion; run actions on them.</span>
+      </a>
+    </article>
+
+    <footer class="colophon">
+      <p>NCS 205 handbook · module 09 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
+    </footer>
+  </main>
+
+  <aside class="toc" aria-label="On this page">
+    <div class="toc-title">On this page</div>
+    <ul>
+      <li><a href="#why">§1 Why this matters</a></li>
+      <li><a href="#mental-model">§2 Mental model</a></li>
+      <li><a href="#flags">§3 grep flags</a></li>
+      <li><a href="#regex">§4 Regex grammar</a></li>
+      <li><a href="#walkthrough">§5 Walkthrough</a></li>
+      <li><a href="#gotchas">§6 Gotchas</a></li>
+      <li><a href="#drills">§7 Exercises</a></li>
+      <li><a href="#scenario">§8 Scenario</a></li>
+      <li><a href="#recap">§9 What to remember</a></li>
+    </ul>
+  </aside>
+</div>
+
+<script src="assets/site.js"></script>
+</body>
+</html>

@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>The Mentor's Guide to Linux — NCS 205</title>
+<meta name="description" content="A learn-by-doing companion to the SUNY Poly NCS 205 lab worksheets. Concept, walkthrough, drills, and real-world sysadmin scenarios for every topic." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="mark">/&gt;</span>
+    <span>The Mentor's Guide to Linux</span>
+    <span class="sub">NCS 205 handbook</span>
+  </div>
+  <div class="right">
+    <span class="crumbs"><strong>HOME</strong></span>
+    <button class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+      <span class="icon">☼</span><span class="label">PAPER</span>
+    </button>
+    <button class="menu-btn" aria-label="Open table of contents" aria-expanded="false">MENU</button>
+  </div>
+</header>
+
+<div class="shell">
+
+  <aside class="sidebar" id="sidebar" aria-label="Module navigation"></aside>
+
+  <main class="main" id="main">
+
+    <section class="hero">
+      <div class="kicker">SUNY Polytechnic · NCS 205 · Spring 2026 companion</div>
+      <h1>The Mentor's Guide<br/>to Linux.</h1>
+      <p class="tagline">The labs ask you to <em>prove</em> you know Linux.<br/>This guide teaches you Linux.</p>
+    </section>
+
+    <article>
+
+      <h2 id="who">Who this is for</h2>
+      <p>You. The student staring at a PDF that says <em>"What does <code>ls -ld /var/</code> do?"</em> with no textbook, no slides, and a half-broken video.</p>
+      <p>I'll be your mentor. We go slow where it matters, fast where it doesn't, and every concept ends with <strong>drills you can run in your terminal right now</strong> and a <strong>real-world sysadmin scenario</strong> so you see how this stuff shows up on the job.</p>
+      <p>Finish the guide and the labs and you won't just pass NCS 205 — you'll have the foundation that senior Linux engineers operate on every day.</p>
+
+      <h2 id="how">How to use this guide</h2>
+      <ol>
+        <li><strong>Set up your environment first</strong> — go to <a href="00-orientation.html">Orientation &amp; setup</a>. Pick WSL, a VM, or a cloud VPS.</li>
+        <li><strong>Work the modules in order.</strong> They build on each other.</li>
+        <li><strong>Do the drills as you read.</strong> Try them <em>before</em> expanding the answer.</li>
+        <li><strong>Read the sysadmin scenario at the end.</strong> That's the bridge from "memorized" to "I can fix things."</li>
+        <li><strong>Then attempt the matching lab PDFs.</strong> Each module says which lab numbers it prepares you for.</li>
+      </ol>
+
+      <div class="section-head">
+        <h2 id="path">The learning path</h2>
+        <span class="badge">23 modules</span>
+      </div>
+
+      <h3>Foundations</h3>
+      <p style="color: var(--text-muted); font-style: italic; margin-top: -0.4em;">Build a working environment, navigate a Unix system, and read your shell prompt without flinching.</p>
+      <div class="module-grid">
+        <a class="module-card" href="00-orientation.html">
+          <span class="num">MODULE 00</span>
+          <span class="ttl">Orientation &amp; setup</span>
+          <span class="body">A working Linux box, the sandbox we'll use for drills, the sysadmin mindset.</span>
+        </a>
+        <a class="module-card" href="01-shell-and-ssh.html">
+          <span class="num">MODULE 01 · LABS 1–2, 64</span>
+          <span class="ttl">Shell access &amp; SSH</span>
+          <span class="body">Log into a remote box, read your prompt, manage sessions, transfer files.</span>
+        </a>
+        <a class="module-card" href="02-filesystem-navigation.html">
+          <span class="num">MODULE 02 · LABS 2, 5</span>
+          <span class="ttl">Filesystem navigation</span>
+          <span class="body">Move around any Unix system without getting lost. FHS, paths, home, dotfiles.</span>
+        </a>
+        <a class="module-card" href="03-listing-and-files.html">
+          <span class="num">MODULE 03 · LABS 5–9</span>
+          <span class="ttl">Listing &amp; file operations</span>
+          <span class="body">Inspect, copy, move, rename, link, delete files — safely.</span>
+        </a>
+        <a class="module-card" href="04-file-globbing.html">
+          <span class="num">MODULE 04 · LAB 10</span>
+          <span class="ttl">File globbing</span>
+          <span class="body">Match files with <code>*</code>, <code>?</code>, <code>[]</code>, <code>{}</code> like a pro.</span>
+        </a>
+        <a class="module-card" href="05-viewing-text.html">
+          <span class="num">MODULE 05 · LABS 11–13</span>
+          <span class="ttl">Viewing text files</span>
+          <span class="body">Read big files, page through logs, peek at heads/tails.</span>
+        </a>
+        <a class="module-card" href="06-vi-editor.html">
+          <span class="num">MODULE 06 · LABS 14–15</span>
+          <span class="ttl">The vi / vim editor</span>
+          <span class="body">Survive in vi, edit confidently, leave the editor when you mean to.</span>
+        </a>
+        <a class="module-card" href="07-permissions.html">
+          <span class="num">MODULE 07 · LABS 16–18</span>
+          <span class="ttl">Permissions</span>
+          <span class="body">rwx, octal, chmod, chown, umask, setuid, sticky bits.</span>
+        </a>
+        <a class="module-card" href="08-redirection-pipes.html">
+          <span class="num">MODULE 08 · LAB 19</span>
+          <span class="ttl">Redirection &amp; pipes</span>
+          <span class="body">Wire commands together; control stdin, stdout, stderr.</span>
+        </a>
+      </div>
+
+      <h3>Text &amp; search</h3>
+      <p style="color: var(--text-muted); font-style: italic; margin-top: -0.4em;">The Unix philosophy in action — small tools, pipelines, text as the universal interface.</p>
+      <div class="module-grid">
+        <a class="module-card" href="09-grep-and-regex.html">
+          <span class="num">MODULE 09 · LABS 20–22</span>
+          <span class="ttl">grep &amp; regular expressions</span>
+          <span class="body">Search anything; read regex without panic.</span>
+        </a>
+        <a class="module-card" href="10-find-and-xargs.html">
+          <span class="num">MODULE 10 · LAB 23</span>
+          <span class="ttl">find &amp; xargs</span>
+          <span class="body">Locate files by any criterion; run actions on them.</span>
+        </a>
+        <a class="module-card" href="11-processes-and-jobs.html">
+          <span class="num">MODULE 11 · LABS 24–26</span>
+          <span class="ttl">Processes &amp; jobs</span>
+          <span class="body">Inspect, signal, background, and kill processes.</span>
+        </a>
+        <a class="module-card" href="12-text-toolbox.html">
+          <span class="num">MODULE 12 · LABS 31–32</span>
+          <span class="ttl">Text-processing toolbox</span>
+          <span class="body">cut, sort, uniq, tr, paste — composable filter pipelines.</span>
+        </a>
+        <a class="module-card" href="13-sed-and-awk.html">
+          <span class="num">MODULE 13 · LABS 33–35</span>
+          <span class="ttl">sed &amp; awk</span>
+          <span class="body">Transform text streams declaratively. The original data tools.</span>
+        </a>
+      </div>
+
+      <h3>Sysadmin</h3>
+      <p style="color: var(--text-muted); font-style: italic; margin-top: -0.4em;">Real work. Real boxes. Things that page you at 3 AM.</p>
+      <div class="module-grid">
+        <a class="module-card" href="14-shell-scripting.html">
+          <span class="num">MODULE 14 · LABS 51–55</span>
+          <span class="ttl">Shell scripting</span>
+          <span class="body">Write portable bash with logic, arguments, exit codes.</span>
+        </a>
+        <a class="module-card" href="15-env-and-startup.html">
+          <span class="num">MODULE 15 · LAB 56</span>
+          <span class="ttl">Environment &amp; startup</span>
+          <span class="body">Tame <code>PATH</code>, aliases, and shell startup order.</span>
+        </a>
+        <a class="module-card" href="16-users-and-admin.html">
+          <span class="num">MODULE 16 · LABS 57–58</span>
+          <span class="ttl">Users &amp; admin</span>
+          <span class="body">Manage users, groups, and <code>sudo</code> like a sysadmin.</span>
+        </a>
+        <a class="module-card" href="17-services-systemd.html">
+          <span class="num">MODULE 17 · LABS 59–60</span>
+          <span class="ttl">Services &amp; systemd</span>
+          <span class="body">Start/stop/debug services and write unit files.</span>
+        </a>
+        <a class="module-card" href="18-networking.html">
+          <span class="num">MODULE 18 · LAB 61</span>
+          <span class="ttl">Networking basics</span>
+          <span class="body">Diagnose connectivity, DNS, ports, HTTP from the shell.</span>
+        </a>
+        <a class="module-card" href="19-ssh-keys-and-2fa.html">
+          <span class="num">MODULE 19 · LABS 62–64</span>
+          <span class="ttl">SSH keys &amp; 2FA</span>
+          <span class="body">Passwordless SSH and Google Authenticator hardening.</span>
+        </a>
+        <a class="module-card" href="20-git-basics.html">
+          <span class="num">MODULE 20 · LAB 36</span>
+          <span class="ttl">git for sysadmins</span>
+          <span class="body">Version-control configs and scripts.</span>
+        </a>
+        <a class="module-card" href="21-cron-and-scheduling.html">
+          <span class="num">MODULE 21 · LAB A1</span>
+          <span class="ttl">cron &amp; scheduling</span>
+          <span class="body">Schedule recurring jobs; understand timer alternatives.</span>
+        </a>
+        <a class="module-card" href="22-logs-and-troubleshooting.html">
+          <span class="num">MODULE 22 · LABS B1–C1</span>
+          <span class="ttl">Logs &amp; troubleshooting</span>
+          <span class="body">Read <code>/var/log</code>, <code>journalctl</code>, and triage failing systems.</span>
+        </a>
+      </div>
+
+      <h3>Reference</h3>
+      <p style="color: var(--text-muted); font-style: italic; margin-top: -0.4em;">Cheatsheets to keep open in a second tab.</p>
+      <div class="module-grid">
+        <a class="module-card" href="reference/cheatsheet-shortcuts.html">
+          <span class="num">CHEATSHEET</span>
+          <span class="ttl">Keyboard shortcuts</span>
+          <span class="body">CLI editing, pagers, tmux, ssh escapes.</span>
+        </a>
+        <a class="module-card" href="reference/cheatsheet-vi.html">
+          <span class="num">CHEATSHEET</span>
+          <span class="ttl">vi / vim</span>
+          <span class="body">Modes, motions, edits, the grammar, a minimal <code>.vimrc</code>.</span>
+        </a>
+        <a class="module-card" href="reference/cheatsheet-regex.html">
+          <span class="num">CHEATSHEET</span>
+          <span class="ttl">Regex</span>
+          <span class="body">BRE / ERE / PCRE side-by-side, plus common recipes.</span>
+        </a>
+      </div>
+
+      <h2 id="shape">The shape of every module</h2>
+      <p>Each topic page follows the same nine-section structure, so you always know where to look:</p>
+
+      <table>
+        <thead><tr><th style="width:8ch">§</th><th>Section</th><th>What it gives you</th></tr></thead>
+        <tbody>
+          <tr><td><code>01</code></td><td><strong>Why this matters</strong></td><td>Real-world framing.</td></tr>
+          <tr><td><code>02</code></td><td><strong>Mental model</strong></td><td>How to <em>think</em> about it.</td></tr>
+          <tr><td><code>03</code></td><td><strong>Core commands</strong></td><td>The toolbox with flags.</td></tr>
+          <tr><td><code>04</code></td><td><strong>Guided walkthrough</strong></td><td>Step-by-step you type along with.</td></tr>
+          <tr><td><code>05</code></td><td><strong>Gotchas</strong></td><td>Traps I'd warn a junior about.</td></tr>
+          <tr><td><code>06</code></td><td><strong>On-the-spot exercises</strong></td><td>Drills with collapsible answers.</td></tr>
+          <tr><td><code>07</code></td><td><strong>Real-world scenario</strong></td><td>Incident-style case study.</td></tr>
+          <tr><td><code>08</code></td><td><strong>What to remember</strong></td><td>One-screen recap.</td></tr>
+          <tr><td><code>09</code></td><td><strong>Next</strong></td><td>Pointer to the next module.</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="philosophy">A note on philosophy</h2>
+      <blockquote>
+        <p>There is no shortcut to being good at Linux. There is only <strong>type, read, think, repeat</strong>. I'll make the path as efficient as I can, but the keyboard part is on you.</p>
+        <p>If a command doesn't make sense, <strong>run it</strong>. If it still doesn't make sense, <strong>break it on purpose and see what happens.</strong> Linux is one of the few systems where you learn fastest by deliberately messing things up in a safe sandbox.</p>
+      </blockquote>
+
+      <a class="next-card" href="00-orientation.html">
+        <span class="label">START HERE →</span>
+        <span class="title">Module 00 · Orientation &amp; setup</span>
+        <span class="desc">Get your hands on a real Linux box and the right mindset before the first command.</span>
+      </a>
+
+    </article>
+
+    <footer class="colophon">
+      <p>NCS 205 handbook · built for SUNY Polytechnic Institute course materials, Spring 2026.</p>
+      <p>Set in Fraunces, Newsreader, and JetBrains Mono. Best read with your hands on a keyboard.</p>
+    </footer>
+
+  </main>
+
+  <aside class="toc" aria-label="On this page">
+    <div class="toc-title">On this page</div>
+    <ul>
+      <li><a href="#who">Who this is for</a></li>
+      <li><a href="#how">How to use</a></li>
+      <li><a href="#path">Learning path</a></li>
+      <li><a href="#shape">Module shape</a></li>
+      <li><a href="#philosophy">Philosophy</a></li>
+    </ul>
+  </aside>
+
+</div>
+
+<script src="assets/site.js"></script>
+</body>
+</html>

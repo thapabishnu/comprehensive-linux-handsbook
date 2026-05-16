@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>13 · sed &amp; awk — Mentor's Guide to Linux</title>
+<meta name="description" content="The grown-up text tools. sed for stream edits, awk for fielded transformations." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="brand">
+    <a href="index.html" style="border:none; color: inherit; display: contents;">
+      <span class="mark">/&gt;</span>
+      <span>The Mentor's Guide to Linux</span>
+    </a>
+    <span class="sub">NCS 205 handbook</span>
+  </div>
+  <div class="right">
+    <span class="crumbs"><a href="index.html" style="color: inherit; border: none;">HOME</a> / <strong>MODULE 13</strong></span>
+    <button class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+      <span class="icon">☼</span><span class="label">PAPER</span>
+    </button>
+    <button class="menu-btn" aria-label="Open table of contents" aria-expanded="false">MENU</button>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="sidebar" id="sidebar" aria-label="Module navigation"></aside>
+
+  <main class="main" id="main">
+    <article class="module">
+      <div class="meta-row">
+        <span><span class="label">MODULE</span>13</span>
+        <span><span class="label">MAPS TO</span>LABS 33–35</span>
+        <span><span class="label">TIME</span>~45 min</span>
+      </div>
+
+      <h1>sed and awk</h1>
+      <p class="lede">The grown-up text tools. 50 years old, on every Unix system, used in production every day.</p>
+
+      <h2 id="why"><span class="secnum">§1</span>Why this matters</h2>
+      <p>When <code>cut</code>/<code>sort</code>/<code>uniq</code> aren't enough — when you need substitutions across files, line-range edits, fielded transforms, conditionals — these two cover it. You don't need to master them; you need <em>literacy</em>.</p>
+
+      <h2 id="mental-model"><span class="secnum">§2</span>Mental model</h2>
+      <ul>
+        <li><strong><code>sed</code></strong> = <strong>s</strong>tream <strong>ed</strong>itor. Reads input line by line, applies editing commands to lines matching an address, prints the result.</li>
+        <li><strong><code>awk</code></strong> = pattern-action language. For each line, finds fields split on whitespace (or your separator), then runs actions on lines matching patterns.</li>
+      </ul>
+<pre data-lang="diagram" data-nocopy="true"><code>   sed:   [address]command/...      e.g.  s/old/new/g     1,5d
+   awk:   pattern { action }        e.g.  $3 > 100 { print $1 }</code></pre>
+
+      <h2 id="sed"><span class="secnum">§3</span>sed essentials</h2>
+
+      <h3>Syntax shape</h3>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sed [-n] [-i] [-E] 'addr command' file</code></pre>
+      <ul>
+        <li><code>-n</code> — suppress automatic printing (use with <code>p</code>).</li>
+        <li><code>-i</code> — edit <em>in place</em> (modifies the file).</li>
+        <li><code>-E</code> — Extended Regex.</li>
+      </ul>
+
+      <h3>Most-used commands</h3>
+      <table>
+        <thead><tr><th>Command</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><code>s/old/new/</code></td><td>Substitute first <code>old</code> per line</td></tr>
+          <tr><td><code>s/old/new/g</code></td><td>Substitute <strong>every</strong> occurrence per line</td></tr>
+          <tr><td><code>s/old/new/2</code></td><td>Only the 2nd occurrence per line</td></tr>
+          <tr><td><code>s/old/new/I</code></td><td>Case-insensitive substitution</td></tr>
+          <tr><td><code>d</code></td><td>Delete matching lines</td></tr>
+          <tr><td><code>p</code></td><td>Print matching lines (use with <code>-n</code>)</td></tr>
+          <tr><td><code>q</code></td><td>Quit immediately</td></tr>
+          <tr><td><code>Nd</code></td><td>Delete line N</td></tr>
+          <tr><td><code>1,5d</code></td><td>Delete lines 1 through 5</td></tr>
+          <tr><td><code>/pat/d</code></td><td>Delete lines matching <code>pat</code></td></tr>
+          <tr><td><code>/start/,/end/p</code></td><td>Print from <code>start</code> match to <code>end</code> match</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Examples</h3>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sed 's/error/ERROR/g' log.txt          <span class="tok-comment"># uppercase the word "error" everywhere</span>
+<span class="tok-prompt">$ </span>sed -E 's/[0-9]+/N/g' data.txt         <span class="tok-comment"># replace every number with literal N</span>
+<span class="tok-prompt">$ </span>sed -n '5,10p' file.txt                <span class="tok-comment"># print only lines 5-10</span>
+<span class="tok-prompt">$ </span>sed '/^#/d' /etc/ssh/ssh_config        <span class="tok-comment"># delete comment lines</span>
+<span class="tok-prompt">$ </span>sed -i.bak 's/old/new/g' file.txt      <span class="tok-comment"># in-place edit; backup to .bak</span></code></pre>
+
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · <code>sed -i</code> is permanent</span>
+        <p>Always pair with <code>-i.bak</code> (or dry-run first). Irreversibly mangling configs is a classic 2 AM mistake.</p>
+      </div>
+
+      <h3>Multi-command sed</h3>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sed -e 's/foo/bar/g' -e 's/baz/quux/g' file.txt
+<span class="tok-prompt">$ </span>sed 's/foo/bar/g; s/baz/quux/g' file.txt</code></pre>
+
+      <h2 id="awk"><span class="secnum">§4</span>awk essentials</h2>
+
+      <h3>Syntax shape</h3>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>awk 'BEGIN { ... } pattern { action } END { ... }' file</code></pre>
+      <ul>
+        <li><strong>BEGIN</strong> — runs once before any input.</li>
+        <li><strong>pattern { action }</strong> — runs <code>action</code> for every line where <code>pattern</code> matches.</li>
+        <li><strong>END</strong> — runs once after all input.</li>
+      </ul>
+      <p>If you omit the pattern, the action runs on every line. If you omit the action, the default is <code>{ print }</code>.</p>
+
+      <h3>Built-in variables</h3>
+      <table>
+        <thead><tr><th>Variable</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>$0</code></td><td>The whole line</td></tr>
+          <tr><td><code>$1</code>, <code>$2</code>, …</td><td>Field 1, 2, … (whitespace by default)</td></tr>
+          <tr><td><code>NF</code></td><td>Number of fields on this line</td></tr>
+          <tr><td><code>$NF</code></td><td>The <strong>last</strong> field</td></tr>
+          <tr><td><code>NR</code></td><td>Number of records (lines) read so far</td></tr>
+          <tr><td><code>FS</code></td><td>Field separator (default: whitespace)</td></tr>
+          <tr><td><code>OFS</code></td><td>Output field separator</td></tr>
+          <tr><td><code>FILENAME</code></td><td>Current input filename</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Useful patterns</h3>
+      <table>
+        <thead><tr><th>Pattern</th><th>Matches</th></tr></thead>
+        <tbody>
+          <tr><td><code>/regex/</code></td><td>Lines matching regex</td></tr>
+          <tr><td><code>$3 &gt; 100</code></td><td>Lines where field 3 &gt; 100</td></tr>
+          <tr><td><code>NR == 1</code></td><td>Just the first line</td></tr>
+          <tr><td><code>NR &gt; 1</code></td><td>Skip the header</td></tr>
+          <tr><td><code>$1 == "alice"</code></td><td>Where field 1 equals "alice"</td></tr>
+          <tr><td><code>NR &gt;= 5 &amp;&amp; NR &lt;= 10</code></td><td>Lines 5–10</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Examples</h3>
+<pre data-lang="sh"><code><span class="tok-comment"># Print the second field of every line</span>
+<span class="tok-prompt">$ </span>awk '{print $2}' file.txt
+
+<span class="tok-comment"># Use comma as field separator</span>
+<span class="tok-prompt">$ </span>awk -F',' '{print $1, $3}' employees.csv
+
+<span class="tok-comment"># Sum a numeric column</span>
+<span class="tok-prompt">$ </span>awk -F',' 'NR &gt; 1 {sum += $4} END {print sum}' employees.csv
+
+<span class="tok-comment"># Print lines where col 3 is "eng"</span>
+<span class="tok-prompt">$ </span>awk -F',' '$3 == "eng"' employees.csv
+
+<span class="tok-comment"># Print last field of every line</span>
+<span class="tok-prompt">$ </span>awk '{print $NF}' /etc/passwd
+
+<span class="tok-comment"># Format output with printf</span>
+<span class="tok-prompt">$ </span>awk -F',' 'NR&gt;1 {printf "%-12s %8d\n", $2, $4}' employees.csv</code></pre>
+
+      <h3>The Hello World of awk</h3>
+<pre data-lang="awk"><code>awk 'BEGIN { print "start"; total=0 }
+     NR &gt; 1 { total += $4 }
+     END { print "total:", total }' \
+  /path/to/data.csv</code></pre>
+      <p>Pattern blocks, accumulator, summary at the end. Compare to Python — awk is <em>terse</em>.</p>
+
+      <h2 id="walkthrough"><span class="secnum">§5</span>Guided walkthrough</h2>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cd ~/ncs205-sandbox/text/
+
+<span class="tok-comment"># --- sed ---</span>
+<span class="tok-prompt">$ </span>sed 's/Anderson/Andersen/g' names.txt
+<span class="tok-prompt">$ </span>sed -n '5p' names.txt
+<span class="tok-prompt">$ </span>sed '/^A/d' names.txt
+<span class="tok-prompt">$ </span>sed -n '/Khan/,/Lopez/p' names.txt
+
+<span class="tok-comment"># Edit a config-like file (dry run, then in place with backup)</span>
+<span class="tok-prompt">$ </span>cp lorem.txt lorem.bak
+<span class="tok-prompt">$ </span>sed -E 's/^[a-z]/X/' lorem.bak             <span class="tok-comment"># preview</span>
+<span class="tok-prompt">$ </span>sed -E -i.bak 's/^[a-z]/X/' lorem.bak      <span class="tok-comment"># in place, backup .bak</span>
+
+<span class="tok-comment"># --- awk ---</span>
+<span class="tok-prompt">$ </span>awk -F',' '{print $1, $2}' employees.csv
+<span class="tok-prompt">$ </span>awk -F',' 'NR&gt;1 &amp;&amp; $3=="eng" {print $2}' employees.csv
+<span class="tok-prompt">$ </span>awk -F',' 'NR&gt;1 {sum+=$4; n++} END {print "avg:", sum/n}' employees.csv
+
+<span class="tok-comment"># Group salary totals by department</span>
+<span class="tok-prompt">$ </span>awk -F',' 'NR&gt;1 {total[$3] += $4} END {
+  for (d in total) printf "%-8s %d\n", d, total[d]
+}' employees.csv | sort -k2 -rn</code></pre>
+
+      <p>That last one is a one-line <em>group-by-sum</em>. In SQL: <code>SELECT dept, SUM(salary) FROM employees GROUP BY dept</code>.</p>
+
+      <h2 id="gotchas"><span class="secnum">§6</span>Gotchas</h2>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · <code>sed -i</code> is permanent</span>
+        <p>Pair with <code>.bak</code> until you trust it: <code>sed -i.bak ...</code>.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · macOS <code>sed</code> differs from GNU</span>
+        <p>On macOS, <code>-i</code> requires an argument (<code>-i ''</code> for no backup). On Linux, <code>-i</code> alone is fine.</p>
+      </div>
+      <div class="callout callout-tip">
+        <span class="callout-label">Tip · quote your programs</span>
+        <p>Single quotes prevent the shell from eating special characters.</p>
+      </div>
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · awk's default separator is whitespace</span>
+        <p>For CSV use <code>-F','</code>. For colon-delimited files like <code>/etc/passwd</code>, <code>-F':'</code>.</p>
+      </div>
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · numeric vs string compare</span>
+        <p>awk's <code>$2 &gt; 100</code> does numeric automatically. But <code>$2 &gt; "100"</code> is string compare. Be explicit if mixing: <code>+$2 &gt; 100</code>.</p>
+      </div>
+
+      <h2 id="drills"><span class="secnum">§7</span>On-the-spot exercises</h2>
+
+      <div class="exercise">
+        <p><span class="ex-id">E13.1</span>Use <code>sed</code> to replace every <code>Anderson</code> with <code>Andersen</code> in <code>names.txt</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sed 's/Anderson/Andersen/g' ~/ncs205-sandbox/text/names.txt</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E13.2</span>Use <code>sed</code> to delete every comment line and blank line from <code>/etc/ssh/ssh_config</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sed -E '/^\s*(#|$)/d' /etc/ssh/ssh_config</code></pre>
+          <p>Two patterns OR'd inside the address: starts with <code>#</code>, or empty line.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E13.3</span>Use <code>awk</code> to print just the <em>names</em> and <em>salaries</em> from <code>employees.csv</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>awk -F',' '{print $2, $4}' ~/ncs205-sandbox/text/employees.csv</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E13.4</span>Print only the <em>engineers</em> (department = "eng") with their salaries.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>awk -F',' '$3=="eng" {print $2, $4}' ~/ncs205-sandbox/text/employees.csv</code></pre>
+          <p>You don't need an explicit <code>if</code>; the pattern <code>$3=="eng"</code> is the condition.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E13.5</span>Compute the average salary across all employees.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>awk -F',' 'NR&gt;1 {sum+=$4; n++} END {print sum/n}' ~/ncs205-sandbox/text/employees.csv</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E13.6</span>Show line numbers of every active config line in <code>/etc/ssh/ssh_config</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>awk '!/^\s*(#|$)/ {print NR": "$0}' /etc/ssh/ssh_config</code></pre>
+          <p><code>!/.../ </code> is "doesn't match." Then print line number and the line.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E13.7</span>Convert <code>/etc/passwd</code> into a CSV with header.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>{
+  echo "username,uid,gid,home,shell"
+  awk -F':' '{print $1","$3","$4","$6","$7}' /etc/passwd
+} &gt; /tmp/users.csv</code></pre>
+          <p>The braces group <code>echo</code> and <code>awk</code> so their combined output is redirected.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E13.8</span>From <code>access.log</code>, print all GET requests that returned 200, as "TIME PATH".</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>awk '$6 ~ /"GET/ &amp;&amp; $9 == 200 { print $4, $7 }' ~/ncs205-sandbox/text/access.log</code></pre>
+          <p><code>~</code> is "matches regex." Common log format makes this trivial.</p>
+        </div></details>
+      </div>
+
+      <h2 id="scenario"><span class="secnum">§8</span>Real-world sysadmin scenario</h2>
+      <p><strong>Mass config update.</strong> A simple awk one: <strong>count nginx 5xx responses by endpoint:</strong></p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>awk '$9 ~ /^5/ { gsub(/"/, "", $7); count[$7]++ }
+     END { for (p in count) print count[p], p }' \
+   /var/log/nginx/access.log | sort -rn | head</code></pre>
+      <p>A whole report in three lines. That's why <code>awk</code> survives — it's a <em>programming language</em> that fits in your head.</p>
+
+      <h2 id="recap"><span class="secnum">§9</span>What to remember</h2>
+      <ul>
+        <li><code>sed</code> for line-level edits (substitution, delete, print ranges).</li>
+        <li><code>awk</code> for field-aware work (CSV, logs, structured text).</li>
+        <li>Quote your programs. Single quotes are friendlier.</li>
+        <li><code>sed -i.bak</code> for safe in-place edits.</li>
+        <li><code>awk '$3 &gt; 100 {print $1}'</code> is the basic shape.</li>
+        <li>For group-by-sum analyses, awk's associative arrays shine.</li>
+      </ul>
+
+      <a class="next-card" href="14-shell-scripting.html">
+        <span class="label">NEXT · MODULE 14</span>
+        <span class="title">Shell scripting</span>
+        <span class="desc">Variables, conditionals, loops, exit codes — turn one-liners into tools.</span>
+      </a>
+    </article>
+
+    <footer class="colophon">
+      <p>NCS 205 handbook · module 13 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
+    </footer>
+  </main>
+
+  <aside class="toc" aria-label="On this page">
+    <div class="toc-title">On this page</div>
+    <ul>
+      <li><a href="#why">§1 Why this matters</a></li>
+      <li><a href="#mental-model">§2 Mental model</a></li>
+      <li><a href="#sed">§3 sed</a></li>
+      <li><a href="#awk">§4 awk</a></li>
+      <li><a href="#walkthrough">§5 Walkthrough</a></li>
+      <li><a href="#gotchas">§6 Gotchas</a></li>
+      <li><a href="#drills">§7 Exercises</a></li>
+      <li><a href="#scenario">§8 Scenario</a></li>
+      <li><a href="#recap">§9 What to remember</a></li>
+    </ul>
+  </aside>
+</div>
+
+<script src="assets/site.js"></script>
+</body>
+</html>

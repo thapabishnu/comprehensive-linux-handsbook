@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>16 · Users &amp; admin — Mentor's Guide to Linux</title>
+<meta name="description" content="/etc/passwd, useradd, groups, sudo — Linux's multi-user privilege model." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="brand">
+    <a href="index.html" style="border:none; color: inherit; display: contents;">
+      <span class="mark">/&gt;</span>
+      <span>The Mentor's Guide to Linux</span>
+    </a>
+    <span class="sub">NCS 205 handbook</span>
+  </div>
+  <div class="right">
+    <span class="crumbs"><a href="index.html" style="color: inherit; border: none;">HOME</a> / <strong>MODULE 16</strong></span>
+    <button class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+      <span class="icon">☼</span><span class="label">PAPER</span>
+    </button>
+    <button class="menu-btn" aria-label="Open table of contents" aria-expanded="false">MENU</button>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="sidebar" id="sidebar" aria-label="Module navigation"></aside>
+
+  <main class="main" id="main">
+    <article class="module">
+      <div class="meta-row">
+        <span><span class="label">MODULE</span>16</span>
+        <span><span class="label">MAPS TO</span>LABS 57–58</span>
+        <span><span class="label">TIME</span>~30 min</span>
+      </div>
+
+      <h1>Users, groups, and sudo</h1>
+      <p class="lede">Every audit, every breach investigation, every "why can't I access this?" ticket starts here.</p>
+
+      <h2 id="why"><span class="secnum">§1</span>Why this matters</h2>
+      <p>Multi-user is Linux's deep DNA. The privilege model — <em>who</em> can do <em>what</em> — is what keeps systems safe.</p>
+
+      <h2 id="mental-model"><span class="secnum">§2</span>Mental model</h2>
+      <p>A <strong>user</strong> has a numeric <strong>UID</strong>. UID <code>0</code> is root — unrestricted. System accounts have low UIDs (1–999); real humans usually start at UID 1000.</p>
+      <p>A <strong>group</strong> has a numeric <strong>GID</strong>. Every user has one <em>primary</em> group and zero or more <em>supplementary</em> groups.</p>
+      <p>The kernel checks access against UID + groups + permission bits. Everything else (sudo, PAM, ACLs) sits on top of this core model.</p>
+
+      <h3>The four key files</h3>
+      <table>
+        <thead><tr><th>File</th><th>Contains</th></tr></thead>
+        <tbody>
+          <tr><td><code>/etc/passwd</code></td><td>Account info — username, UID, GID, home, shell. World-readable.</td></tr>
+          <tr><td><code>/etc/shadow</code></td><td>Hashed passwords + aging info. Root-readable only.</td></tr>
+          <tr><td><code>/etc/group</code></td><td>Group definitions and members.</td></tr>
+          <tr><td><code>/etc/sudoers</code> + <code>/etc/sudoers.d/</code></td><td>Who can <code>sudo</code>. <strong>Edit with <code>visudo</code>, never directly.</strong></td></tr>
+        </tbody>
+      </table>
+
+      <p>A line in <code>/etc/passwd</code>:</p>
+<pre data-lang="diagram" data-nocopy="true"><code>sarah:x:1001:1001:Sarah Anderson:/home/sarah:/bin/bash
+└┬─┘ │ └─┬┘ └─┬┘ └────┬─────┘ └────┬───┘ └──┬──┘
+ │   │   │    │       │            │        └ login shell
+ │   │   │    │       │            └ home directory
+ │   │   │    │       └ "GECOS" — full name
+ │   │   │    └ primary GID
+ │   │   └ UID
+ │   └ password placeholder (real hash in /etc/shadow)
+ └ username</code></pre>
+
+      <h2 id="commands"><span class="secnum">§3</span>Core commands</h2>
+
+      <h3>Inspecting accounts</h3>
+      <table>
+        <thead><tr><th>Command</th><th>What it shows</th></tr></thead>
+        <tbody>
+          <tr><td><code>whoami</code></td><td>Your username</td></tr>
+          <tr><td><code>id</code></td><td>Your UID, GID, supplementary groups</td></tr>
+          <tr><td><code>id alice</code></td><td>Same for another user</td></tr>
+          <tr><td><code>groups</code></td><td>Groups you're in</td></tr>
+          <tr><td><code>getent passwd alice</code></td><td>Like grepping /etc/passwd but also queries LDAP/AD if configured</td></tr>
+          <tr><td><code>last alice</code></td><td>Recent logins by alice</td></tr>
+          <tr><td><code>lastlog</code></td><td>Last login of every user</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Creating, modifying, deleting</h3>
+      <table>
+        <thead><tr><th>Command</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><code>sudo useradd -m -s /bin/bash -G sudo alice</code></td><td>Create user <code>alice</code> with home dir, bash shell, in group <code>sudo</code></td></tr>
+          <tr><td><code>sudo passwd alice</code></td><td>Set/reset alice's password</td></tr>
+          <tr><td><code>sudo usermod -aG devs alice</code></td><td><strong>Append</strong> to supplementary group (always use <code>-a</code>!)</td></tr>
+          <tr><td><code>sudo usermod -L alice</code></td><td>Lock the account</td></tr>
+          <tr><td><code>sudo usermod -U alice</code></td><td>Unlock</td></tr>
+          <tr><td><code>sudo userdel -r alice</code></td><td>Delete user and home dir</td></tr>
+          <tr><td><code>sudo groupadd devs</code></td><td>Create a group</td></tr>
+          <tr><td><code>chage -l alice</code></td><td>Show password aging info</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Privilege escalation</h3>
+      <table>
+        <thead><tr><th>Command</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><code>sudo cmd</code></td><td>Run <code>cmd</code> as root (if in sudoers)</td></tr>
+          <tr><td><code>sudo -u alice cmd</code></td><td>Run <code>cmd</code> as alice</td></tr>
+          <tr><td><code>sudo -i</code></td><td>Start interactive <em>login</em> root shell</td></tr>
+          <tr><td><code>sudo -s</code></td><td>Root shell, keep your env</td></tr>
+          <tr><td><code>sudo -l</code></td><td>List what sudo rights you have</td></tr>
+          <tr><td><code>su -</code></td><td>Switch to root (requires root password)</td></tr>
+          <tr><td><code>visudo</code></td><td>Safely edit <code>/etc/sudoers</code></td></tr>
+          <tr><td><code>visudo -f /etc/sudoers.d/myrule</code></td><td>Edit a drop-in fragment</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="walkthrough"><span class="secnum">§4</span>Guided walkthrough</h2>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>whoami
+<span class="tok-prompt">$ </span>id
+<span class="tok-prompt">$ </span>groups
+<span class="tok-prompt">$ </span>grep "$USER" /etc/passwd
+
+<span class="tok-comment"># create a test user</span>
+<span class="tok-prompt">$ </span>sudo useradd -m -s /bin/bash -c "Test User" testdev
+<span class="tok-prompt">$ </span>sudo passwd testdev
+
+<span class="tok-prompt">$ </span>id testdev
+<span class="tok-prompt">$ </span>sudo getent passwd testdev
+<span class="tok-prompt">$ </span>sudo ls -ld /home/testdev
+
+<span class="tok-comment"># groups</span>
+<span class="tok-prompt">$ </span>sudo groupadd devs
+<span class="tok-prompt">$ </span>sudo usermod -aG devs testdev
+<span class="tok-prompt">$ </span>id testdev
+<span class="tok-prompt">$ </span>groups testdev
+
+<span class="tok-prompt">$ </span>sudo su - testdev
+<span class="tok-prompt">$ </span>exit
+
+<span class="tok-comment"># cleanup</span>
+<span class="tok-prompt">$ </span>sudo userdel -r testdev
+<span class="tok-prompt">$ </span>sudo groupdel devs</code></pre>
+
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · <code>-aG</code> vs <code>-G</code></span>
+        <p><code>usermod -G devs alice</code> <em>replaces</em> alice's supplementary groups with just <code>devs</code>. Use <code>-aG</code> (<code>append</code>) to add without removing. Stripping a teammate out of <code>sudo</code> by forgetting <code>-a</code> is a once-and-never-again lesson.</p>
+      </div>
+
+      <h3>sudo configuration</h3>
+      <p>To allow <code>alice</code> to run anything as root without a password (dev VM only — never prod):</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo visudo -f /etc/sudoers.d/alice</code></pre>
+<pre data-lang="sudoers" data-nocopy="true"><code>alice ALL=(ALL) NOPASSWD: ALL</code></pre>
+
+      <p>For finer control — alice can only restart nginx:</p>
+<pre data-lang="sudoers" data-nocopy="true"><code>alice ALL=(root) NOPASSWD: /bin/systemctl restart nginx</code></pre>
+
+      <p><strong>Never</strong> edit <code>/etc/sudoers</code> directly. A syntax error can lock you out entirely.</p>
+
+      <h2 id="gotchas"><span class="secnum">§5</span>Gotchas</h2>
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · <code>/etc/passwd</code> is world-readable</span>
+        <p>Many tools need to map UIDs to names. But it means anything in the GECOS field is public.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · <code>-aG</code> vs <code>-G</code></span>
+        <p>Reread above. This bug costs careers.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · removing a user doesn't clean up everywhere</span>
+        <p><code>userdel -r</code> removes home dir; files in <code>/tmp</code> or <code>/srv</code> you must hunt down.</p>
+      </div>
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · <code>sudo</code> keeps its own environment</span>
+        <p><code>sudo CMD</code> doesn't see your aliases or functions; <code>sudo -E CMD</code> preserves env. <code>PATH</code> is filtered for security.</p>
+      </div>
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · <code>su</code> vs <code>sudo -i</code></span>
+        <p><code>su -</code> requires root's password. <code>sudo -i</code> uses <em>your</em> password (via sudoers). Most modern systems disable direct root login.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · locked ≠ disabled</span>
+        <p><code>passwd -l alice</code> locks the password but SSH keys still work. To fully prevent login, also set shell to <code>/sbin/nologin</code> and remove SSH keys.</p>
+      </div>
+
+      <h2 id="drills"><span class="secnum">§6</span>On-the-spot exercises</h2>
+
+      <div class="exercise">
+        <p><span class="ex-id">E16.1</span>What's your UID and primary GID?</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>id -u
+<span class="tok-prompt">$ </span>id -g</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E16.2</span>List every account on the system whose shell is <code>/bin/bash</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>grep '/bin/bash$' /etc/passwd | cut -d':' -f1</code></pre>
+          <p>Roughly your set of human users (system accounts usually have <code>/usr/sbin/nologin</code>).</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E16.3</span>Add yourself to group <code>docker</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo usermod -aG docker "$USER"
+<span class="tok-comment"># log out and back in for the new group to take effect</span></code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E16.4</span>Show how many days until your password expires.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>chage -l "$USER"</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E16.5</span>Create a service account <code>backup-svc</code> that has no shell login.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo useradd -r -s /usr/sbin/nologin -m -d /var/lib/backup-svc backup-svc</code></pre>
+          <p><code>-r</code> = system account; <code>-s /usr/sbin/nologin</code> = no interactive login.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E16.6</span>List exactly what sudo rights you have.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo -l</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E16.7</span>Switch to user <code>nobody</code> and run a command.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo -u nobody whoami</code></pre>
+          <p>Runs one command and returns.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E16.8</span>Configure <code>alice</code> to restart nginx via sudo without a password, but nothing else.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo visudo -f /etc/sudoers.d/alice-nginx</code></pre>
+<pre data-lang="sudoers" data-nocopy="true"><code>alice ALL=(root) NOPASSWD: /bin/systemctl restart nginx, /bin/systemctl reload nginx</code></pre>
+        </div></details>
+      </div>
+
+      <h2 id="scenario"><span class="secnum">§7</span>Real-world sysadmin scenario</h2>
+      <p><strong>New engineer joining.</strong></p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo useradd -m -s /bin/bash -c "Jamie Lee" jamie
+<span class="tok-prompt">$ </span>sudo passwd jamie
+
+<span class="tok-prompt">$ </span>sudo usermod -aG devs,docker,sudo jamie
+
+<span class="tok-prompt">$ </span>sudo install -d -m 700 -o jamie -g jamie /home/jamie/.ssh
+<span class="tok-prompt">$ </span>printf '%s\n' "ssh-ed25519 AAAA... jamie@laptop" | \
+  sudo install -m 600 -o jamie -g jamie /dev/stdin /home/jamie/.ssh/authorized_keys
+
+<span class="tok-prompt">$ </span>id jamie
+<span class="tok-prompt">$ </span>sudo -u jamie -i whoami</code></pre>
+
+      <p>When jamie leaves:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo passwd -l jamie                    <span class="tok-comment"># lock immediately</span>
+<span class="tok-prompt">$ </span>sudo usermod -e $(date +%F) jamie       <span class="tok-comment"># expire account today</span>
+<span class="tok-prompt">$ </span>sudo tar -cJf /backup/jamie-home.tar.xz /home/jamie
+<span class="tok-prompt">$ </span>sudo userdel -r jamie</code></pre>
+      <p>Lock first (immediate), then back up, then delete. Order matters.</p>
+
+      <h2 id="recap"><span class="secnum">§8</span>What to remember</h2>
+      <ul>
+        <li>UID/GID + permission bits = whole privilege model.</li>
+        <li><code>id</code>, <code>groups</code>, <code>getent</code> — your inspectors.</li>
+        <li><code>useradd -m -s /bin/bash NAME</code> is the standard create.</li>
+        <li><strong><code>usermod -aG</code></strong> when adding to groups. Don't forget <code>-a</code>.</li>
+        <li><code>visudo</code> only; never edit <code>/etc/sudoers</code> directly.</li>
+        <li><code>sudo -l</code> shows what you can do.</li>
+        <li>Lock-then-delete when offboarding.</li>
+      </ul>
+
+      <a class="next-card" href="17-services-systemd.html">
+        <span class="label">NEXT · MODULE 17</span>
+        <span class="title">Services &amp; systemd</span>
+        <span class="desc">systemctl, unit files, journalctl.</span>
+      </a>
+    </article>
+
+    <footer class="colophon">
+      <p>NCS 205 handbook · module 16 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
+    </footer>
+  </main>
+
+  <aside class="toc" aria-label="On this page">
+    <div class="toc-title">On this page</div>
+    <ul>
+      <li><a href="#why">§1 Why this matters</a></li>
+      <li><a href="#mental-model">§2 Mental model</a></li>
+      <li><a href="#commands">§3 Core commands</a></li>
+      <li><a href="#walkthrough">§4 Walkthrough</a></li>
+      <li><a href="#gotchas">§5 Gotchas</a></li>
+      <li><a href="#drills">§6 Exercises</a></li>
+      <li><a href="#scenario">§7 Scenario</a></li>
+      <li><a href="#recap">§8 What to remember</a></li>
+    </ul>
+  </aside>
+</div>
+
+<script src="assets/site.js"></script>
+</body>
+</html>

@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>02 · Filesystem navigation — Mentor's Guide to Linux</title>
+<meta name="description" content="The FHS, absolute vs relative paths, ~ . .., dotfiles, and the cd/pwd/ls habits a sysadmin builds early." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="brand">
+    <a href="index.html" style="border:none; color: inherit; display: contents;">
+      <span class="mark">/&gt;</span>
+      <span>The Mentor's Guide to Linux</span>
+    </a>
+    <span class="sub">NCS 205 handbook</span>
+  </div>
+  <div class="right">
+    <span class="crumbs"><a href="index.html" style="color: inherit; border: none;">HOME</a> / <strong>MODULE 02</strong></span>
+    <button class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+      <span class="icon">☼</span><span class="label">PAPER</span>
+    </button>
+    <button class="menu-btn" aria-label="Open table of contents" aria-expanded="false">MENU</button>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="sidebar" id="sidebar" aria-label="Module navigation"></aside>
+
+  <main class="main" id="main">
+    <article class="module">
+
+      <div class="meta-row">
+        <span><span class="label">MODULE</span>02</span>
+        <span><span class="label">MAPS TO</span>LAB 2 · LAB 5</span>
+        <span><span class="label">TIME</span>~25 min</span>
+      </div>
+
+      <h1>The filesystem and how to move through it</h1>
+      <p class="lede">Prerequisites: a working shell from <a href="00-orientation.html">Module 00</a> and <a href="01-shell-and-ssh.html">Module 01</a>.</p>
+
+      <h2 id="why"><span class="secnum">§1</span>Why this matters</h2>
+      <p>In Linux, <strong>everything is a file</strong> — your text documents, your hard drives, your network sockets, even running processes are represented somewhere in the filesystem. If you can navigate it confidently, you can administer the box. If you get lost, you start typing destructive commands in the wrong directory. Most <em>"I accidentally deleted prod"</em> stories start with someone who didn't know where they were.</p>
+
+      <h2 id="mental-model"><span class="secnum">§2</span>Mental model</h2>
+      <p>Linux has <strong>one filesystem tree</strong>, rooted at <code>/</code>. There are no drive letters (<code>C:\</code>, <code>D:\</code>) — every storage device, USB stick, or network share is <em>grafted onto</em> a directory under <code>/</code>.</p>
+
+<pre data-lang="tree" data-nocopy="true"><code>/
+├── bin        →  user binaries (ls, cp, ...)
+├── etc        →  configuration files
+├── home       →  user home directories
+│   └── you
+├── opt        →  optional/third-party software
+├── root       →  the root user's home (yes, separate)
+├── tmp        →  scratch space, wiped on reboot
+├── usr        →  most installed programs and libs
+├── var        →  variable data: logs, mail, caches
+└── ...</code></pre>
+
+      <p>This layout is called the <strong>Filesystem Hierarchy Standard (FHS)</strong>. Every Linux distro mostly follows it. Learning it is like learning street names: once you know where logs live (<code>/var/log</code>) and where config files live (<code>/etc</code>), you'll know where to look without asking.</p>
+
+      <h3>Two ways to name a file: absolute vs relative</h3>
+      <ul>
+        <li><strong>Absolute path</strong> — starts with <code>/</code>. Unambiguous, works from anywhere. <em>Example:</em> <code>/etc/passwd</code></li>
+        <li><strong>Relative path</strong> — starts <em>anywhere else</em>. Means "from where I currently am." <em>Example:</em> <code>passwd</code> means "in my current dir." <code>../passwd</code> means "in the parent."</li>
+      </ul>
+      <p>Mentally: an absolute path is a street address. A relative path is "two blocks that way."</p>
+
+      <h3>Three shortcuts you'll use every day</h3>
+      <table>
+        <thead><tr><th>Symbol</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>~</code></td><td>Your home directory (e.g. <code>/home/you</code>). <code>~/notes</code> means <code>/home/you/notes</code>.</td></tr>
+          <tr><td><code>.</code></td><td>The current directory. <code>./script.sh</code> runs the script in this dir.</td></tr>
+          <tr><td><code>..</code></td><td>The parent directory. <code>cd ..</code> goes up one level.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note</span>
+        <p><code>./script.sh</code> and <code>script.sh</code> are <em>not</em> the same. Without <code>./</code>, the shell looks in <code>PATH</code> only. With <code>./</code>, you're explicitly telling it "right here." We'll cover <code>PATH</code> in module 15.</p>
+      </div>
+
+      <h3>Dotfiles</h3>
+      <p>Filenames that begin with <code>.</code> are <strong>hidden</strong> — <code>ls</code> won't show them by default. This is a convention, not a permission: anyone can list them with <code>ls -a</code>. Most config files in your home directory are dotfiles (<code>.bashrc</code>, <code>.ssh/</code>, <code>.gitconfig</code>).</p>
+
+      <h2 id="commands"><span class="secnum">§3</span>Core commands</h2>
+      <table>
+        <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>pwd</code></td><td>Print working directory (where am I?).</td></tr>
+          <tr><td><code>cd &lt;path&gt;</code></td><td>Change directory.</td></tr>
+          <tr><td><code>cd</code> (no args)</td><td>Go home (<code>~</code>).</td></tr>
+          <tr><td><code>cd -</code></td><td>Go to the <strong>previous</strong> directory you were in.</td></tr>
+          <tr><td><code>cd ..</code></td><td>Go up one level.</td></tr>
+          <tr><td><code>cd ../..</code></td><td>Up two levels.</td></tr>
+          <tr><td><code>ls</code></td><td>List directory contents.</td></tr>
+          <tr><td><code>ls -a</code></td><td>Include dotfiles.</td></tr>
+          <tr><td><code>ls -l</code></td><td>Long format (perms, owner, size, time).</td></tr>
+          <tr><td><code>ls -la</code> / <code>ls -al</code></td><td>Both.</td></tr>
+          <tr><td><code>ls -ld &lt;dir&gt;</code></td><td>Show info about the directory itself, not its contents.</td></tr>
+          <tr><td><code>tree</code></td><td>Visualize the directory tree (install with apt/dnf).</td></tr>
+          <tr><td><code>stat &lt;file&gt;</code></td><td>Detailed metadata: inode, size, all three timestamps.</td></tr>
+          <tr><td><code>file &lt;file&gt;</code></td><td>Tell you what <em>kind</em> of file something is.</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="walkthrough"><span class="secnum">§4</span>Guided walkthrough</h2>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cd                   <span class="tok-comment"># go home</span>
+<span class="tok-prompt">$ </span>pwd                  <span class="tok-comment"># confirm we're in /home/you</span>
+<span class="tok-prompt">$ </span>ls                   <span class="tok-comment"># what's here?</span>
+<span class="tok-prompt">$ </span>ls -a                <span class="tok-comment"># include dotfiles — many more!</span>
+<span class="tok-prompt">$ </span>cd /etc              <span class="tok-comment"># absolute path; jump to /etc</span>
+<span class="tok-prompt">$ </span>pwd                  <span class="tok-comment"># /etc</span>
+<span class="tok-prompt">$ </span>cd ..                <span class="tok-comment"># up one level</span>
+<span class="tok-prompt">$ </span>pwd                  <span class="tok-comment"># /</span>
+<span class="tok-prompt">$ </span>cd -                 <span class="tok-comment"># back to /etc (cd - is "previous dir")</span>
+<span class="tok-prompt">$ </span>ls -l /etc/passwd    <span class="tok-comment"># long listing of one file</span>
+<span class="tok-prompt">$ </span>file /etc/passwd     <span class="tok-comment"># "ASCII text"</span>
+<span class="tok-prompt">$ </span>file /bin/ls         <span class="tok-comment"># "ELF 64-bit LSB executable..."</span></code></pre>
+
+      <p>Now create a sandbox to play in:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cd ~
+<span class="tok-prompt">$ </span>mkdir -p playground/a/b/c
+<span class="tok-prompt">$ </span>cd playground/a/b/c
+<span class="tok-prompt">$ </span>pwd                       <span class="tok-comment"># /home/you/playground/a/b/c</span>
+<span class="tok-prompt">$ </span>cd ../..                  <span class="tok-comment"># up two levels</span>
+<span class="tok-prompt">$ </span>pwd                       <span class="tok-comment"># /home/you/playground/a</span>
+<span class="tok-prompt">$ </span>cd ~                      <span class="tok-comment"># all the way home</span>
+<span class="tok-prompt">$ </span>pwd</code></pre>
+
+      <p>Use <strong>Tab completion</strong> the whole time. <code>cd /e</code><kbd>Tab</kbd> should complete <code>/etc/</code>.</p>
+
+      <h2 id="gotchas"><span class="secnum">§5</span>Gotchas</h2>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · <code>cd</code> with no args goes home</span>
+        <p>Not "stay where you are." If you wanted to be a no-op, just press Enter.</p>
+      </div>
+      <div class="callout callout-tip">
+        <span class="callout-label">Tip · <code>cd -</code> is the back button</span>
+        <p>It toggles between the last two directories. Insanely useful when bouncing between <code>/var/log</code> and <code>/etc/nginx</code>.</p>
+      </div>
+      <div class="callout callout-tip">
+        <span class="callout-label">Tip · <code>cd ~user</code></span>
+        <p><code>~user</code> is <em>another user's</em> home (e.g. <code>cd ~root</code> if you have permission). <code>cd ~</code> alone is <em>your</em> home.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · trailing slashes</span>
+        <p>Don't matter for <code>cd</code> but <em>do</em> matter for <code>cp</code> and <code>rsync</code>. <code>cp dir1 dir2</code> vs <code>cp dir1/ dir2/</code> can behave differently. We'll see in module 03.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · spaces &amp; special chars</span>
+        <p>Quote them: <code>cd "My Documents"</code> or escape: <code>cd My\ Documents</code>. Most server paths avoid spaces precisely to prevent this hassle.</p>
+      </div>
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note</span>
+        <p>You can <code>cd</code> into a directory you can't <code>ls</code>. Different permissions (<code>x</code> vs <code>r</code>). Module 07 covers this.</p>
+      </div>
+
+      <h2 id="drills"><span class="secnum">§6</span>On-the-spot exercises</h2>
+
+      <div class="exercise">
+        <p><span class="ex-id">E2.1</span>You are in <code>/var/log</code>. In <em>one command</em>, get to <code>/etc/nginx/conf.d/</code> using an absolute path.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cd /etc/nginx/conf.d/</code></pre>
+          <p>The trailing <code>/</code> is optional. The point: absolute paths work the same no matter where you start.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E2.2</span>You are in <code>/etc/nginx/conf.d/</code>. Get to <code>/etc/nginx/</code> using a <em>relative</em> path.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cd ..</code></pre>
+          <p>Going <em>up</em> is one of the most common operations. Don't always reach for the absolute path when <code>..</code> does it.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E2.3</span>What's the difference between <code>cd ~</code>, <code>cd</code>, and <code>cd $HOME</code>?</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+          <p>Nothing — all three go to your home directory. <code>~</code> is shell-expanded to <code>$HOME</code> before <code>cd</code> ever sees it. <code>cd</code> with no args defaults to <code>$HOME</code>. They are three idioms for the same action.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E2.4</span>Run <code>ls</code> in your home directory. Now run <code>ls -a</code>. Pick one dotfile and explain what it's for. (<code>man &lt;name&gt;</code> or <code>head &lt;name&gt;</code> might help.)</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+          <p>Common ones:</p>
+          <ul>
+            <li><code>.bashrc</code> — runs every time you start an interactive non-login shell. Where you put aliases.</li>
+            <li><code>.profile</code> / <code>.bash_profile</code> — runs at <em>login</em>. Where you put <code>PATH</code> exports.</li>
+            <li><code>.ssh/</code> — your SSH keys, known hosts, and config.</li>
+            <li><code>.viminfo</code> — vim's history.</li>
+            <li><code>.lesshst</code> — <code>less</code>'s search history.</li>
+          </ul>
+          <p>Knowing that <em>every dotfile is a config file</em> will help you a lot in module 15.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E2.5</span>You're at the prompt <code>you@box:/var/log/nginx$</code>. Without running <code>pwd</code>, what directory are you in?</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+          <p><code>/var/log/nginx</code>. The bit between <code>:</code> and <code>$</code> is your current directory. Your prompt is doing free <code>pwd</code> for you — that's why customizing your prompt is worth a few minutes (module 15).</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E2.6</span>From your home directory, list the contents of <code>/tmp/</code> without changing into it.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>ls /tmp/</code></pre>
+          <p><code>ls</code> accepts a path argument — you don't have to <code>cd</code> first. This habit alone will speed you up massively.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E2.7</span>Make a directory tree <code>~/work/2026/may/</code> in <em>one</em> command.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>mkdir -p ~/work/2026/may/</code></pre>
+          <p><code>-p</code> means "create parents as needed, don't error if they exist." Without <code>-p</code>, <code>mkdir</code> errors if <code>~/work</code> doesn't already exist.</p>
+        </div></details>
+      </div>
+
+      <h2 id="scenario"><span class="secnum">§7</span>Real-world sysadmin scenario</h2>
+      <p><strong>3 AM page.</strong> "Database server is offline." You SSH in. The on-call wiki says config is "somewhere under <code>/etc</code>." Where do you look?</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>ls /etc | grep -i mysql        <span class="tok-comment"># likely candidates</span>
+<span class="tok-prompt">$ </span>ls /etc | grep -i postgres
+<span class="tok-prompt">$ </span>ls /etc/systemd/system/*.service | head -10</code></pre>
+      <p>You find <code>/etc/mysql/</code>. Inside:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cd /etc/mysql/
+<span class="tok-prompt">$ </span>ls
+<span class="tok-prompt">$ </span>file my.cnf                   <span class="tok-comment"># "ASCII text"</span>
+<span class="tok-prompt">$ </span>ls -la                        <span class="tok-comment"># check perms — root? readable?</span></code></pre>
+      <p>Without changing directory, you peek at the log:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>tail /var/log/mysql/error.log</code></pre>
+      <p>In 60 seconds you've located the config, confirmed it's a normal text file, and read the most recent errors — without ever leaving the shell or guessing. <strong>That's filesystem fluency.</strong></p>
+
+      <h2 id="recap"><span class="secnum">§8</span>What to remember</h2>
+      <ul>
+        <li>One tree. Root is <code>/</code>. No drive letters.</li>
+        <li>Absolute paths start with <code>/</code>, relative paths don't.</li>
+        <li><code>~</code> is home. <code>.</code> is here. <code>..</code> is parent. <code>cd -</code> is back.</li>
+        <li>Dotfiles are hidden by convention. <code>ls -a</code> shows them.</li>
+        <li>Use <strong>Tab completion</strong> every single time. It's not a luxury, it's a safety net.</li>
+      </ul>
+
+      <a class="next-card" href="03-listing-and-files.html">
+        <span class="label">NEXT · MODULE 03</span>
+        <span class="title">Listing &amp; file operations</span>
+        <span class="desc">Get good at <code>ls</code>, copy, move, link, delete — safely.</span>
+      </a>
+    </article>
+
+    <footer class="colophon">
+      <p>NCS 205 handbook · module 02 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
+    </footer>
+  </main>
+
+  <aside class="toc" aria-label="On this page">
+    <div class="toc-title">On this page</div>
+    <ul>
+      <li><a href="#why">§1 Why this matters</a></li>
+      <li><a href="#mental-model">§2 Mental model</a></li>
+      <li><a href="#commands">§3 Core commands</a></li>
+      <li><a href="#walkthrough">§4 Walkthrough</a></li>
+      <li><a href="#gotchas">§5 Gotchas</a></li>
+      <li><a href="#drills">§6 Exercises</a></li>
+      <li><a href="#scenario">§7 Scenario</a></li>
+      <li><a href="#recap">§8 What to remember</a></li>
+    </ul>
+  </aside>
+</div>
+
+<script src="assets/site.js"></script>
+</body>
+</html>

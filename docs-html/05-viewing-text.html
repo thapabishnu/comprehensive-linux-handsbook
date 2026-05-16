@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>05 · Viewing text — Mentor's Guide to Linux</title>
+<meta name="description" content="cat, less, head, tail, wc, file — and the right tool for the right size of text." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="brand">
+    <a href="index.html" style="border:none; color: inherit; display: contents;">
+      <span class="mark">/&gt;</span>
+      <span>The Mentor's Guide to Linux</span>
+    </a>
+    <span class="sub">NCS 205 handbook</span>
+  </div>
+  <div class="right">
+    <span class="crumbs"><a href="index.html" style="color: inherit; border: none;">HOME</a> / <strong>MODULE 05</strong></span>
+    <button class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+      <span class="icon">☼</span><span class="label">PAPER</span>
+    </button>
+    <button class="menu-btn" aria-label="Open table of contents" aria-expanded="false">MENU</button>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="sidebar" id="sidebar" aria-label="Module navigation"></aside>
+
+  <main class="main" id="main">
+    <article class="module">
+      <div class="meta-row">
+        <span><span class="label">MODULE</span>05</span>
+        <span><span class="label">MAPS TO</span>LABS 11–13</span>
+        <span><span class="label">TIME</span>~20 min</span>
+      </div>
+
+      <h1>Viewing text files</h1>
+      <p class="lede">The whole skill is picking the right viewer. <code>cat</code> a 4 GB log and you lock your terminal. <code>less</code> handles it in a second.</p>
+
+      <h2 id="why"><span class="secnum">§1</span>Why this matters</h2>
+      <p>Most files a sysadmin reads are text — configs, logs, scripts, data dumps. Picking the wrong viewer is annoying for small files and catastrophic for big ones.</p>
+
+      <h2 id="mental-model"><span class="secnum">§2</span>Mental model</h2>
+      <p>Three questions decide which tool you reach for:</p>
+      <ol>
+        <li><strong>How big is the file?</strong> Tiny (&lt; 1 page) → <code>cat</code>. Anything bigger → <code>less</code>.</li>
+        <li><strong>Do I want a fixed slice?</strong> Start of file → <code>head</code>. End of file → <code>tail</code>. New lines as they arrive → <code>tail -f</code>.</li>
+        <li><strong>Am I building a pipeline?</strong> Use <code>cat</code> only when you literally need to concatenate. Otherwise let tools open files themselves: <code>grep pattern file</code> is faster than <code>cat file | grep pattern</code>.</li>
+      </ol>
+      <p>The last point is the <em>Useless Use of Cat</em> award. A surprising amount of "Unix style" is just learning to drop unnecessary <code>cat</code>s.</p>
+
+      <h2 id="commands"><span class="secnum">§3</span>Core commands</h2>
+      <table>
+        <thead><tr><th>Command</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>cat &lt;f&gt;</code></td><td>Print whole file to stdout.</td></tr>
+          <tr><td><code>cat -n &lt;f&gt;</code></td><td>With line numbers.</td></tr>
+          <tr><td><code>cat -A &lt;f&gt;</code></td><td>Show non-printing characters (useful for finding stray tabs/CRLFs).</td></tr>
+          <tr><td><code>cat f1 f2 &gt; out</code></td><td>Concatenate multiple files. The <em>real</em> job of <code>cat</code>.</td></tr>
+          <tr><td><code>less &lt;f&gt;</code></td><td>Page through a file interactively. <strong>Default for any file you didn't write.</strong></td></tr>
+          <tr><td><code>more &lt;f&gt;</code></td><td>Older, less capable pager. Use <code>less</code>.</td></tr>
+          <tr><td><code>head &lt;f&gt;</code></td><td>First 10 lines.</td></tr>
+          <tr><td><code>head -n 30 &lt;f&gt;</code></td><td>First 30 lines.</td></tr>
+          <tr><td><code>tail &lt;f&gt;</code></td><td>Last 10 lines.</td></tr>
+          <tr><td><code>tail -n 50 &lt;f&gt;</code></td><td>Last 50 lines.</td></tr>
+          <tr><td><code>tail -f &lt;f&gt;</code></td><td><strong>Follow</strong> — keep printing new lines as they're appended. Essential for live logs.</td></tr>
+          <tr><td><code>tail -F &lt;f&gt;</code></td><td>Like <code>-f</code> but survives the file being rotated.</td></tr>
+          <tr><td><code>wc &lt;f&gt;</code></td><td>Word, line, and byte counts.</td></tr>
+          <tr><td><code>wc -l &lt;f&gt;</code></td><td>Just line count.</td></tr>
+          <tr><td><code>nl &lt;f&gt;</code></td><td>Number lines (skipping blanks by default).</td></tr>
+          <tr><td><code>file &lt;f&gt;</code></td><td>What <em>kind</em> of file is this?</td></tr>
+        </tbody>
+      </table>
+
+      <h3><code>less</code> keys you must know</h3>
+      <table>
+        <thead><tr><th>Key</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><kbd>Space</kbd> / <kbd>f</kbd></td><td>Page down.</td></tr>
+          <tr><td><kbd>b</kbd></td><td>Page up.</td></tr>
+          <tr><td><kbd>g</kbd> / <kbd>G</kbd></td><td>Jump to top / bottom.</td></tr>
+          <tr><td><kbd>/</kbd>pattern</td><td>Search forward. <kbd>n</kbd> next, <kbd>N</kbd> previous.</td></tr>
+          <tr><td><kbd>?</kbd>pattern</td><td>Search backward.</td></tr>
+          <tr><td><kbd>&amp;</kbd>pattern</td><td><strong>Filter to lines matching</strong> — incredibly useful in big logs.</td></tr>
+          <tr><td><kbd>q</kbd></td><td>Quit.</td></tr>
+          <tr><td><kbd>F</kbd></td><td>Switch into follow-mode (like <code>tail -f</code> inside <code>less</code>). <kbd>Ctrl</kbd>+<kbd>C</kbd> exits follow.</td></tr>
+        </tbody>
+      </table>
+      <p><code>less</code> is <code>vi</code> for reading. Once these are muscle memory, you'll never <code>cat</code> a log again.</p>
+
+      <h2 id="walkthrough"><span class="secnum">§4</span>Guided walkthrough</h2>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cd ~/ncs205-sandbox/text/
+
+<span class="tok-prompt">$ </span>cat lorem.txt              <span class="tok-comment"># short file — fine</span>
+<span class="tok-prompt">$ </span>wc -l access.log
+<span class="tok-prompt">$ </span>head -3 access.log
+<span class="tok-prompt">$ </span>tail -3 access.log
+
+<span class="tok-comment"># pageable — try the less keys</span>
+<span class="tok-prompt">$ </span>less access.log
+<span class="tok-comment"># inside less:</span>
+<span class="tok-comment">#   /401       search for "401" forward</span>
+<span class="tok-comment">#   n          next match</span>
+<span class="tok-comment">#   q          quit</span>
+
+<span class="tok-comment"># live tail (simulate writes from another terminal)</span>
+<span class="tok-prompt">$ </span>tail -f /var/log/syslog &amp;   <span class="tok-comment"># background process; we'll meet &amp; in module 11</span>
+<span class="tok-prompt">$ </span>echo "noise" &gt;&gt; /var/log/syslog 2&gt;/dev/null   <span class="tok-comment"># may fail without sudo</span>
+<span class="tok-prompt">$ </span>fg          <span class="tok-comment"># bring tail -f back; Ctrl+C to stop</span></code></pre>
+
+      <p><code>tail -f</code> is the sysadmin's window into a running app. Open it in a second pane, run the action that you expect to log, watch the lines appear. If they don't — your <em>first</em> question is whether you're tailing the right file.</p>
+
+      <h2 id="gotchas"><span class="secnum">§5</span>Gotchas</h2>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · <code>cat</code> on a big file freezes your terminal</span>
+        <p>Always assume "big" unless you know otherwise. <code>less</code> first, <code>cat</code> only when it's tiny or you're piping somewhere.</p>
+      </div>
+      <div class="callout callout-tip">
+        <span class="callout-label">Tip · drop useless <code>cat</code></span>
+        <p><code>cat file | grep ...</code> is wasteful. <code>grep ... file</code> is the right form. The only reason to use <code>cat ... | grep</code> is when you're concatenating multiple files first.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · <code>tail -f</code> dies on log rotation</span>
+        <p><code>logrotate</code> moves <code>app.log</code> to <code>app.log.1</code>, then creates a fresh <code>app.log</code>. Your <code>tail -f</code> was watching the <em>old</em> inode. Use <code>tail -F</code> to survive rotation.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · binary files break your terminal</span>
+        <p>If you <code>cat /bin/ls</code> you'll see line noise; sometimes your prompt is corrupted afterwards. Recover with <code>reset</code> (just type it blind and press Enter).</p>
+      </div>
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · CRLF on Windows-edited files</span>
+        <p><code>cat -A myfile</code> will show <code>^M$</code> at end of lines if Windows touched it. <code>dos2unix myfile</code> strips them.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · <code>tail -n +N</code></span>
+        <p>With a <code>+</code>, that means <em>start from line N</em>, not "last N lines." Mistakes here account for 50% of one-liner bugs.</p>
+      </div>
+
+      <h2 id="drills"><span class="secnum">§6</span>On-the-spot exercises</h2>
+
+      <div class="exercise">
+        <p><span class="ex-id">E5.1</span>Show only the first 5 lines of <code>~/ncs205-sandbox/text/access.log</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>head -n 5 ~/ncs205-sandbox/text/access.log</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E5.2</span>Count how many lines are in <code>/etc/passwd</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>wc -l /etc/passwd</code></pre>
+          <p>That number is roughly how many user accounts exist on this box — including system accounts.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E5.3</span>Show only the last 3 entries from <code>~/ncs205-sandbox/text/access.log</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>tail -n 3 ~/ncs205-sandbox/text/access.log</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E5.4</span>Pipe <code>/etc/services</code> into <code>less</code> and search for <code>ssh</code> interactively.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>less /etc/services
+<span class="tok-comment"># inside less:</span>
+<span class="tok-comment">#   /ssh        searches forward</span>
+<span class="tok-comment">#   n           next match</span>
+<span class="tok-comment">#   q           quit</span></code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E5.5</span>Show lines 20–25 of <code>/etc/services</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>head -n 25 /etc/services | tail -n 6</code></pre>
+          <p>Or with <code>sed</code> (module 13):</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sed -n '20,25p' /etc/services</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E5.6</span>Open <code>/var/log/syslog</code> and watch new lines appear live.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo tail -f /var/log/syslog</code></pre>
+          <p><kbd>Ctrl</kbd>+<kbd>C</kbd> to stop. If the file might get rotated mid-watch, use <code>tail -F</code>.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E5.7</span>Confirm the type of file <code>/usr/bin/ls</code> and <code>/etc/passwd</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>file /usr/bin/ls       <span class="tok-comment"># ELF 64-bit LSB pie executable, ...</span>
+<span class="tok-prompt">$ </span>file /etc/passwd       <span class="tok-comment"># ASCII text</span></code></pre>
+          <p>Running <code>file</code> before you <code>cat</code> an unknown file is the cheap insurance that keeps your terminal usable.</p>
+        </div></details>
+      </div>
+
+      <h2 id="scenario"><span class="secnum">§7</span>Real-world sysadmin scenario</h2>
+      <p><strong>Customer reports 500 errors on the API.</strong> You don't know which service. Three terminals:</p>
+<pre data-lang="sh"><code><span class="tok-comment"># Terminal 1 — live-tail nginx access log</span>
+<span class="tok-prompt">$ </span>sudo tail -F /var/log/nginx/access.log | grep ' 500 '
+
+<span class="tok-comment"># Terminal 2 — live-tail the app log</span>
+<span class="tok-prompt">$ </span>sudo tail -F /var/log/myapp/error.log
+
+<span class="tok-comment"># Terminal 3 — reproduce the failing request</span>
+<span class="tok-prompt">$ </span>curl -i https://api.example.com/v1/orders</code></pre>
+
+      <p>When you hit the request, line 1 shows the 500 in access.log and line 2 shows the corresponding stack trace. <strong>The whole investigation runs at the speed of your eyeballs</strong>, because you set up the right viewers first.</p>
+
+      <p>Two related habits:</p>
+<pre data-lang="sh"><code><span class="tok-comment"># What changed recently?</span>
+<span class="tok-prompt">$ </span>ls -ltr /var/log/        <span class="tok-comment"># last edited at the bottom</span>
+
+<span class="tok-comment"># Quick sanity check before editing a config</span>
+<span class="tok-prompt">$ </span>wc -l /etc/nginx/nginx.conf
+<span class="tok-prompt">$ </span>head -3 /etc/nginx/nginx.conf</code></pre>
+
+      <h2 id="recap"><span class="secnum">§8</span>What to remember</h2>
+      <ul>
+        <li>Default pager is <code>less</code>. Save <code>cat</code> for small files and concatenation.</li>
+        <li><code>head</code> / <code>tail</code> for fixed slices. <code>tail -F</code> for live logs through rotation.</li>
+        <li>Inside <code>less</code>: <kbd>/</kbd>, <kbd>n</kbd>, <kbd>q</kbd>, <kbd>g</kbd>, <kbd>G</kbd>, <kbd>F</kbd>. Memorize these six keys.</li>
+        <li>Avoid <code>cat foo | grep ...</code> — <code>grep ... foo</code> is the way.</li>
+        <li>Run <code>file</code> on anything you don't recognize <em>before</em> you cat it.</li>
+      </ul>
+
+      <a class="next-card" href="06-vi-editor.html">
+        <span class="label">NEXT · MODULE 06</span>
+        <span class="title">The vi/vim editor</span>
+        <span class="desc">Surviving vi, then mastering it. The editor on every Linux box.</span>
+      </a>
+    </article>
+
+    <footer class="colophon">
+      <p>NCS 205 handbook · module 05 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
+    </footer>
+  </main>
+
+  <aside class="toc" aria-label="On this page">
+    <div class="toc-title">On this page</div>
+    <ul>
+      <li><a href="#why">§1 Why this matters</a></li>
+      <li><a href="#mental-model">§2 Mental model</a></li>
+      <li><a href="#commands">§3 Core commands</a></li>
+      <li><a href="#walkthrough">§4 Walkthrough</a></li>
+      <li><a href="#gotchas">§5 Gotchas</a></li>
+      <li><a href="#drills">§6 Exercises</a></li>
+      <li><a href="#scenario">§7 Scenario</a></li>
+      <li><a href="#recap">§8 What to remember</a></li>
+    </ul>
+  </aside>
+</div>
+
+<script src="assets/site.js"></script>
+</body>
+</html>

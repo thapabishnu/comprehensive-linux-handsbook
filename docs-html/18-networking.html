@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>18 · Networking — Mentor's Guide to Linux</title>
+<meta name="description" content="ip, ss, dig, curl — diagnose network problems layer by layer from the shell." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="brand">
+    <a href="index.html" style="border:none; color: inherit; display: contents;">
+      <span class="mark">/&gt;</span>
+      <span>The Mentor's Guide to Linux</span>
+    </a>
+    <span class="sub">NCS 205 handbook</span>
+  </div>
+  <div class="right">
+    <span class="crumbs"><a href="index.html" style="color: inherit; border: none;">HOME</a> / <strong>MODULE 18</strong></span>
+    <button class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+      <span class="icon">☼</span><span class="label">PAPER</span>
+    </button>
+    <button class="menu-btn" aria-label="Open table of contents" aria-expanded="false">MENU</button>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="sidebar" id="sidebar" aria-label="Module navigation"></aside>
+
+  <main class="main" id="main">
+    <article class="module">
+      <div class="meta-row">
+        <span><span class="label">MODULE</span>18</span>
+        <span><span class="label">MAPS TO</span>LAB 61</span>
+        <span><span class="label">TIME</span>~30 min</span>
+      </div>
+
+      <h1>Networking basics</h1>
+      <p class="lede">Debug bottom-up: link → IP → port → protocol. Each layer has a tool.</p>
+
+      <h2 id="why"><span class="secnum">§1</span>Why this matters</h2>
+      <p>Production Linux <em>is</em> a networking platform. When "it works on localhost but not from outside," when DNS misbehaves, when a port shows open from one machine but closed from another — these tools are the difference between guessing and <em>knowing</em>.</p>
+
+      <h2 id="mental-model"><span class="secnum">§2</span>Mental model</h2>
+      <p>Networking has layers; for sysadmin work, four matter:</p>
+<pre data-lang="diagram" data-nocopy="true"><code>   L7  HTTP / SSH / SMTP / DNS              ← what apps speak
+   L4  TCP / UDP / ports (16-bit numbers)   ← connections
+   L3  IP addresses, routes                 ← addressing
+   L2  MAC addresses, the local link        ← Ethernet/Wi-Fi</code></pre>
+
+      <p>When something doesn't work, go <em>bottom-up</em>: is the cable up (L2), do I have an IP (L3), is the port open (L4), is the protocol responding (L7)?</p>
+
+      <h2 id="commands"><span class="secnum">§3</span>Core commands</h2>
+
+      <h3>Layer 2 / 3 — links, addresses, routes</h3>
+      <table>
+        <thead><tr><th>Command</th><th>What it shows</th></tr></thead>
+        <tbody>
+          <tr><td><code>ip link</code></td><td>Network interfaces (up/down, MAC)</td></tr>
+          <tr><td><code>ip -4 addr</code></td><td>IPv4 addresses on each interface</td></tr>
+          <tr><td><code>ip -6 addr</code></td><td>IPv6</td></tr>
+          <tr><td><code>ip route</code></td><td>Routing table</td></tr>
+          <tr><td><code>ip neigh</code></td><td>ARP table</td></tr>
+          <tr><td><code>nmcli</code></td><td>Higher-level NetworkManager config</td></tr>
+          <tr><td><code>ping host</code></td><td>"Is this reachable, how fast?"</td></tr>
+          <tr><td><code>traceroute host</code></td><td>Hops between you and host</td></tr>
+          <tr><td><code>mtr host</code></td><td>Continuous traceroute + latency</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Layer 4 — TCP/UDP, ports</h3>
+      <table>
+        <thead><tr><th>Command</th><th>What it shows</th></tr></thead>
+        <tbody>
+          <tr><td><code>ss -tulpn</code></td><td>Listening sockets (TCP/UDP, with PID, port, program)</td></tr>
+          <tr><td><code>ss -tan</code></td><td>All TCP connections (numeric)</td></tr>
+          <tr><td><code>nc -zv host port</code></td><td>Test if a remote port is open</td></tr>
+          <tr><td><code>nc -lv -p 12345</code></td><td>Open a listener for testing</td></tr>
+          <tr><td><code>ufw status</code> / <code>iptables -L</code></td><td>Show firewall rules</td></tr>
+        </tbody>
+      </table>
+      <p><code>netstat</code> is the old version of <code>ss</code> — slower, sometimes missing. Use <code>ss</code>.</p>
+
+      <h3>DNS</h3>
+      <table>
+        <thead><tr><th>Command</th><th>What it shows</th></tr></thead>
+        <tbody>
+          <tr><td><code>dig example.com</code></td><td>Authoritative-style DNS query</td></tr>
+          <tr><td><code>dig +short example.com</code></td><td>Just the answer</td></tr>
+          <tr><td><code>dig MX example.com</code></td><td>Mail server records</td></tr>
+          <tr><td><code>dig @8.8.8.8 example.com</code></td><td>Query a specific resolver</td></tr>
+          <tr><td><code>nslookup example.com</code></td><td>Older, simpler</td></tr>
+          <tr><td><code>getent hosts example.com</code></td><td>What the system resolver thinks</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Layer 7 — HTTP, etc.</h3>
+      <table>
+        <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>curl https://example.com</code></td><td>GET; print body</td></tr>
+          <tr><td><code>curl -I https://example.com</code></td><td>HEAD; print headers only</td></tr>
+          <tr><td><code>curl -v https://example.com</code></td><td>Verbose — TLS handshake, headers, body</td></tr>
+          <tr><td><code>curl -L ...</code></td><td>Follow redirects</td></tr>
+          <tr><td><code>curl -o file URL</code></td><td>Save to file</td></tr>
+          <tr><td><code>wget URL</code></td><td>Download</td></tr>
+          <tr><td><code>openssl s_client -connect host:443</code></td><td>Inspect the TLS handshake</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="walkthrough"><span class="secnum">§4</span>Guided walkthrough</h2>
+<pre data-lang="sh"><code><span class="tok-comment"># Layer 2/3 — what links and addresses do we have?</span>
+<span class="tok-prompt">$ </span>ip link
+<span class="tok-prompt">$ </span>ip -4 addr
+<span class="tok-prompt">$ </span>ip route
+<span class="tok-prompt">$ </span>ip route get 8.8.8.8
+
+<span class="tok-comment"># Reachability</span>
+<span class="tok-prompt">$ </span>ping -c 4 8.8.8.8
+<span class="tok-prompt">$ </span>ping -c 4 google.com
+
+<span class="tok-comment"># Layer 4 — what's listening on this box?</span>
+<span class="tok-prompt">$ </span>sudo ss -tulpn
+
+<span class="tok-comment"># Is a remote port open?</span>
+<span class="tok-prompt">$ </span>nc -zv example.com 443
+<span class="tok-prompt">$ </span>nc -zv example.com 22 2&gt;&amp;1 | head -1
+
+<span class="tok-comment"># DNS</span>
+<span class="tok-prompt">$ </span>dig +short example.com
+<span class="tok-prompt">$ </span>dig +short MX example.com
+<span class="tok-prompt">$ </span>getent hosts example.com
+
+<span class="tok-comment"># HTTP</span>
+<span class="tok-prompt">$ </span>curl -I https://example.com
+<span class="tok-prompt">$ </span>curl -v https://example.com 2&gt;&amp;1 | head -30</code></pre>
+
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor habit · start at L3</span>
+        <p>When an app can't reach a service, can you ping it? If not, the problem is routing/firewall — not config or auth. Many wasted hours come from debugging at L7 when the issue is at L3.</p>
+      </div>
+
+      <h2 id="gotchas"><span class="secnum">§5</span>Gotchas</h2>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · <code>ifconfig</code> is deprecated</span>
+        <p>Use <code>ip</code>. They're not 1:1 — <code>ip -4 addr show eth0</code>, not <code>ifconfig eth0</code>.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · <code>ping</code> can be blocked</span>
+        <p>A box that doesn't ping may still serve HTTP fine. Don't conclude "down" from ping alone.</p>
+      </div>
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · <code>nc -zv</code> proves port is accepting</span>
+        <p>Not that the service is alive. Use a protocol-aware test for L7.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · DNS caching</span>
+        <p>System, browser, and upstream resolver all cache. <code>sudo systemd-resolve --flush-caches</code> or restart <code>systemd-resolved</code>.</p>
+      </div>
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · ports below 1024</span>
+        <p>Require root to bind. Services drop privileges <em>after</em> binding.</p>
+      </div>
+      <div class="callout callout-tip">
+        <span class="callout-label">Tip · <code>ss -tulpn</code> needs root for PIDs</span>
+        <p>Without sudo you see the sockets but not the owning process.</p>
+      </div>
+
+      <h2 id="drills"><span class="secnum">§6</span>On-the-spot exercises</h2>
+
+      <div class="exercise">
+        <p><span class="ex-id">E18.1</span>What IPv4 address(es) does this box have?</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>ip -4 addr | grep inet
+<span class="tok-prompt">$ </span>hostname -I</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E18.2</span>What's the default gateway?</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>ip route | grep default</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E18.3</span>Is <code>sshd</code> listening? Which port?</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo ss -tulpn | grep ssh</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E18.4</span>Can you reach <code>example.com:443</code>?</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>nc -zv example.com 443
+<span class="tok-prompt">$ </span>curl -I https://example.com</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E18.5</span>What's <code>example.com</code>'s IPv4?</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>dig +short example.com</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E18.6</span>Trace route to <code>1.1.1.1</code>, max 8 hops.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>traceroute -m 8 1.1.1.1
+<span class="tok-prompt">$ </span>mtr -n 1.1.1.1</code></pre>
+          <p><code>mtr</code> is much friendlier — continuous output with packet-loss stats per hop.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E18.7</span>Show the TLS certificate for <code>example.com</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>echo | openssl s_client -connect example.com:443 -servername example.com 2&gt;/dev/null \
+  | openssl x509 -noout -subject -dates -issuer</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E18.8</span>Run a tiny HTTP listener on port 8000.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-comment"># Terminal 1</span>
+<span class="tok-prompt">$ </span>python3 -m http.server 8000
+
+<span class="tok-comment"># Terminal 2</span>
+<span class="tok-prompt">$ </span>curl -I http://localhost:8000/</code></pre>
+          <p>Useful for quick file shares or testing reverse-proxy configs.</p>
+        </div></details>
+      </div>
+
+      <h2 id="scenario"><span class="secnum">§7</span>Real-world sysadmin scenario</h2>
+      <p><strong>"Web app can't reach the database."</strong> Classic layered debug:</p>
+<pre data-lang="sh"><code><span class="tok-comment"># 1. Is the DB host name resolving?</span>
+<span class="tok-prompt">$ </span>dig +short db.internal
+
+<span class="tok-comment"># 2. Can I reach the DB IP at all (L3)?</span>
+<span class="tok-prompt">$ </span>ping -c 2 db.internal
+
+<span class="tok-comment"># 3. Is the DB port open (L4)?</span>
+<span class="tok-prompt">$ </span>nc -zv db.internal 5432
+
+<span class="tok-comment"># 4. Is the DB *responding* on that port (L7)?</span>
+<span class="tok-prompt">$ </span>psql -h db.internal -U appuser -d appdb -c 'SELECT 1;'</code></pre>
+
+      <p>Each step rules out one whole layer of bug. Compare to opening application logs and guessing — totally different speed of fix.</p>
+
+      <p>Another classic — <strong>"SSH suddenly stopped working":</strong></p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>ping target-host            <span class="tok-comment"># L3</span>
+<span class="tok-prompt">$ </span>nc -zv target-host 22       <span class="tok-comment"># L4</span>
+<span class="tok-prompt">$ </span>ssh -v target-host          <span class="tok-comment"># L7 — verbose ssh shows handshake details</span></code></pre>
+      <p>Verbose <code>ssh -v</code> tells you "auth method publickey failed" vs "Connection refused" vs "Permission denied (publickey)" — three different problems with the same surface symptom.</p>
+
+      <h2 id="recap"><span class="secnum">§8</span>What to remember</h2>
+      <ul>
+        <li>Debug bottom-up: link → IP → port → protocol.</li>
+        <li><code>ip</code> replaces <code>ifconfig</code>; <code>ss</code> replaces <code>netstat</code>.</li>
+        <li><code>ss -tulpn</code> is your "what's listening" one-liner.</li>
+        <li><code>dig +short</code> for DNS without ceremony.</li>
+        <li><code>curl -v</code> for HTTP; <code>openssl s_client</code> for TLS.</li>
+        <li><code>ping</code> succeeds ≠ service alive. <code>nc -zv</code> is L4; still need L7 test.</li>
+      </ul>
+
+      <a class="next-card" href="19-ssh-keys-and-2fa.html">
+        <span class="label">NEXT · MODULE 19</span>
+        <span class="title">SSH keys &amp; 2FA</span>
+        <span class="desc">Passwordless SSH and Google Authenticator hardening.</span>
+      </a>
+    </article>
+
+    <footer class="colophon">
+      <p>NCS 205 handbook · module 18 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
+    </footer>
+  </main>
+
+  <aside class="toc" aria-label="On this page">
+    <div class="toc-title">On this page</div>
+    <ul>
+      <li><a href="#why">§1 Why this matters</a></li>
+      <li><a href="#mental-model">§2 Mental model</a></li>
+      <li><a href="#commands">§3 Core commands</a></li>
+      <li><a href="#walkthrough">§4 Walkthrough</a></li>
+      <li><a href="#gotchas">§5 Gotchas</a></li>
+      <li><a href="#drills">§6 Exercises</a></li>
+      <li><a href="#scenario">§7 Scenario</a></li>
+      <li><a href="#recap">§8 What to remember</a></li>
+    </ul>
+  </aside>
+</div>
+
+<script src="assets/site.js"></script>
+</body>
+</html>

@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>03 · Listing &amp; file operations — Mentor's Guide to Linux</title>
+<meta name="description" content="ls, cp, mv, rm, mkdir, ln. Read disk fluently and change it on purpose — without deleting prod." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="brand">
+    <a href="index.html" style="border:none; color: inherit; display: contents;">
+      <span class="mark">/&gt;</span>
+      <span>The Mentor's Guide to Linux</span>
+    </a>
+    <span class="sub">NCS 205 handbook</span>
+  </div>
+  <div class="right">
+    <span class="crumbs"><a href="index.html" style="color: inherit; border: none;">HOME</a> / <strong>MODULE 03</strong></span>
+    <button class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+      <span class="icon">☼</span><span class="label">PAPER</span>
+    </button>
+    <button class="menu-btn" aria-label="Open table of contents" aria-expanded="false">MENU</button>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="sidebar" id="sidebar" aria-label="Module navigation"></aside>
+
+  <main class="main" id="main">
+    <article class="module">
+      <div class="meta-row">
+        <span><span class="label">MODULE</span>03</span>
+        <span><span class="label">MAPS TO</span>LABS 5–9</span>
+        <span><span class="label">TIME</span>~30 min</span>
+      </div>
+
+      <h1>Listing files and not deleting prod</h1>
+      <p class="lede">Every sysadmin command you'll learn is downstream of this one habit: <em>read carefully, then change deliberately</em>.</p>
+
+      <h2 id="why"><span class="secnum">§1</span>Why this matters</h2>
+      <p>The most-used command in Linux is <code>ls</code>. The second most-used is some flavor of <em>touch / cp / mv / mkdir / rm</em>. These are also the commands most likely to ruin your day if you fire them carelessly. The job here is twofold: <strong>read what's on disk fluently</strong>, and <strong>change it on purpose</strong>.</p>
+
+      <h2 id="mental-model"><span class="secnum">§2</span>Mental model</h2>
+      <p>A Unix file has three faces:</p>
+      <ol>
+        <li><strong>Name</strong> — what you see in <code>ls</code>.</li>
+        <li><strong>Inode</strong> — an internal ID that owns permissions, owner, size, and pointers to the actual data.</li>
+        <li><strong>Data</strong> — the bytes.</li>
+      </ol>
+      <p>A "directory" is really just a <em>file that lists names → inode mappings</em>. Multiple names can point to the same inode (a <strong>hard link</strong>). A separate kind of file can point to <em>a name</em> (a <strong>symlink</strong> or symbolic link).</p>
+
+<pre data-lang="diagram" data-nocopy="true"><code>   name "report.txt"  ──►  inode #19237  ──►  data blocks
+   name "old-report"  ──►  inode #19237  (hard link — same data)
+   name "shortcut"    ──►  "report.txt"  (symlink — points at the name)</code></pre>
+
+      <p>That model explains everything counterintuitive: why <code>rm</code> doesn't always free space, why moving a file across disks is slow (different inode space), why permissions are on the inode not the name.</p>
+
+      <h2 id="commands"><span class="secnum">§3</span>Core commands</h2>
+
+      <h3>Reading</h3>
+      <table>
+        <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>ls</code></td><td>Names only.</td></tr>
+          <tr><td><code>ls -l</code></td><td>Long: perms, owner, group, size, mtime, name.</td></tr>
+          <tr><td><code>ls -la</code></td><td>Long + dotfiles.</td></tr>
+          <tr><td><code>ls -lh</code></td><td>Sizes in human units (K, M, G).</td></tr>
+          <tr><td><code>ls -lS</code></td><td>Sort by size, largest first.</td></tr>
+          <tr><td><code>ls -lt</code></td><td>Sort by mtime, newest first.</td></tr>
+          <tr><td><code>ls -ltr</code></td><td>Sort by mtime, <strong>oldest first</strong> — newest at the bottom (great for tailing-style reading).</td></tr>
+          <tr><td><code>ls -lR</code></td><td>Recurse into subdirectories.</td></tr>
+          <tr><td><code>ls -li</code></td><td>Show inode numbers.</td></tr>
+          <tr><td><code>stat &lt;f&gt;</code></td><td>Full inode metadata.</td></tr>
+          <tr><td><code>du -sh &lt;dir&gt;</code></td><td>Disk usage summary for one directory.</td></tr>
+          <tr><td><code>df -h</code></td><td>Disk free per filesystem.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Creating</h3>
+      <table>
+        <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>touch &lt;f&gt;</code></td><td>Create an empty file, or update mtime on an existing one.</td></tr>
+          <tr><td><code>mkdir &lt;d&gt;</code></td><td>Make a directory.</td></tr>
+          <tr><td><code>mkdir -p a/b/c</code></td><td>Make a directory tree, parents included.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Copying / moving / deleting</h3>
+      <table>
+        <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>cp src dst</code></td><td>Copy a file.</td></tr>
+          <tr><td><code>cp -r src/ dst/</code></td><td>Copy recursively (needed for directories).</td></tr>
+          <tr><td><code>cp -a src dst</code></td><td>Archive copy: preserves perms, timestamps, symlinks. <strong>Default this when in doubt.</strong></td></tr>
+          <tr><td><code>cp -i ...</code></td><td>Prompt before overwrite.</td></tr>
+          <tr><td><code>mv src dst</code></td><td>Move (or rename, if same dir).</td></tr>
+          <tr><td><code>mv -n src dst</code></td><td>No-clobber: don't overwrite.</td></tr>
+          <tr><td><code>rm &lt;f&gt;</code></td><td>Delete a file.</td></tr>
+          <tr><td><code>rm -r &lt;d&gt;</code></td><td>Delete a directory and contents.</td></tr>
+          <tr><td><code>rm -f &lt;f&gt;</code></td><td>Force — no prompts, no errors for missing files.</td></tr>
+          <tr><td><code>rmdir &lt;d&gt;</code></td><td>Delete an <em>empty</em> directory only (safer than <code>rm -r</code>).</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Linking</h3>
+      <table>
+        <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>ln target linkname</code></td><td>Hard link — second name pointing to same inode.</td></tr>
+          <tr><td><code>ln -s target linkname</code></td><td>Symbolic link (a pointer to a path). 99% of the time you want <code>-s</code>.</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="walkthrough"><span class="secnum">§4</span>Guided walkthrough</h2>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cd ~
+<span class="tok-prompt">$ </span>mkdir -p lab03
+<span class="tok-prompt">$ </span>cd lab03
+
+<span class="tok-comment"># create</span>
+<span class="tok-prompt">$ </span>touch hello.txt
+<span class="tok-prompt">$ </span>echo "version 1" &gt; notes.txt
+<span class="tok-prompt">$ </span>mkdir docs
+<span class="tok-prompt">$ </span>echo "important" &gt; docs/keep.txt
+
+<span class="tok-comment"># read</span>
+<span class="tok-prompt">$ </span>ls
+<span class="tok-prompt">$ </span>ls -l
+<span class="tok-prompt">$ </span>ls -lh
+<span class="tok-prompt">$ </span>ls -la
+
+<span class="tok-comment"># copy</span>
+<span class="tok-prompt">$ </span>cp notes.txt notes-backup.txt
+<span class="tok-prompt">$ </span>cp -r docs/ docs-backup/
+<span class="tok-prompt">$ </span>ls -l
+
+<span class="tok-comment"># move (rename)</span>
+<span class="tok-prompt">$ </span>mv hello.txt greeting.txt
+<span class="tok-prompt">$ </span>ls
+
+<span class="tok-comment"># link</span>
+<span class="tok-prompt">$ </span>ln -s notes.txt notes-link
+<span class="tok-prompt">$ </span>ls -l            <span class="tok-comment"># see the "-&gt;" pointing at notes.txt</span>
+
+<span class="tok-comment"># clean up (carefully)</span>
+<span class="tok-prompt">$ </span>rm notes-backup.txt
+<span class="tok-prompt">$ </span>rm -r docs-backup/
+<span class="tok-prompt">$ </span>ls</code></pre>
+      <p>Read every output. Train your eyes on the <code>ls -l</code> columns — they'll mean more after module 07 (permissions).</p>
+
+      <h2 id="gotchas"><span class="secnum">§5</span>Gotchas</h2>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · <code>rm</code> has no recycle bin</span>
+        <p><code>rm -rf /something/precious</code> is <em>immediate and permanent</em>. Always.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · <code>rm -rf "$VAR/..."</code> with empty VAR</span>
+        <p>If <code>$VAR</code> is empty, the command becomes <code>rm -rf /...</code>. Always quote and always check: <code>echo "$VAR"</code> first.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · <code>cp</code> overwrites silently</span>
+        <p>Use <code>cp -i</code> (interactive) or <code>cp -n</code> (no-clobber). Or alias <code>cp='cp -i'</code> in your <code>.bashrc</code>.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · trailing slashes on copy</span>
+        <p><code>cp dir/ /tmp/</code> and <code>cp dir /tmp/</code> can differ when the destination doesn't exist. Re-read the man page if you're not sure.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · <code>mv</code> across filesystems isn't atomic</span>
+        <p>It's actually copy + delete. If the box dies mid-move, you can end up with half a file in each place.</p>
+      </div>
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor habit</span>
+        <p>Before any <code>rm -r</code>, run the same path through <code>ls</code> first. It costs one second and has saved careers.</p>
+      </div>
+
+      <h2 id="drills"><span class="secnum">§6</span>On-the-spot exercises</h2>
+
+      <div class="exercise">
+        <p><span class="ex-id">E3.1</span>List all files in <code>/var/log/</code>, longest format, including dotfiles, sized in MB/KB.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>ls -lah /var/log/</code></pre>
+          <p><code>-h</code> makes sizes readable. Without it you'll see bytes — fine for tiny files, awful for <code>/var</code>.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E3.2</span>Show the <em>5 most recently modified</em> files in <code>/var/log/</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>ls -lt /var/log/ | head -5</code></pre>
+          <p><code>-t</code> = sort by mtime, newest first. We'll learn <code>head</code> properly in module 05.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E3.3</span>Copy <code>/etc/hostname</code> into your home directory, then rename the copy to <code>hostname.bak</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cp /etc/hostname ~/
+<span class="tok-prompt">$ </span>mv ~/hostname ~/hostname.bak</code></pre>
+          <p>Or in one step:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cp /etc/hostname ~/hostname.bak</code></pre>
+          <p>The second form is what a sysadmin actually writes — fewer commands, fewer chances to make a typo.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E3.4</span>Create the directory tree <code>~/projects/scripts/utils/</code> in <em>one</em> command.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>mkdir -p ~/projects/scripts/utils</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E3.5</span>You see two files with the same content. Check whether they're hard links (same inode) or independent copies.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>ls -li file1 file2</code></pre>
+          <p>If both rows show the <strong>same inode number</strong> in the first column, it's the same data — they're hard links. Two different inodes = two separate copies.</p>
+          <p>Bonus: the second <code>ls -l</code> column on a hard-linked file shows the <strong>link count</strong> &gt; 1.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E3.6</span>Make a symlink <code>~/myhost</code> that points to <code>/etc/hostname</code>. Then <code>cat ~/myhost</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>ln -s /etc/hostname ~/myhost
+<span class="tok-prompt">$ </span>cat ~/myhost                  <span class="tok-comment"># shows hostname contents — symlink is transparent to most tools</span>
+<span class="tok-prompt">$ </span>ls -l ~/myhost                <span class="tok-comment"># shows "-&gt; /etc/hostname"</span></code></pre>
+          <p>Symlinks are how <code>/usr/bin/python</code> "just works" no matter which Python version is installed.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E3.7</span>Delete <code>~/myhost</code> <em>the symlink</em>, not what it points to.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>rm ~/myhost</code></pre>
+          <p><code>rm</code> on a symlink removes the <em>link</em>, not the target. (<code>rm</code> on the target file would leave a dangling symlink — pointing at nothing.) The same is true for <code>mv</code>.</p>
+        </div></details>
+      </div>
+
+      <h2 id="scenario"><span class="secnum">§7</span>Real-world sysadmin scenario</h2>
+      <p><strong>Tuesday, 2 PM.</strong> A teammate writes in Slack: <em>"Disk full on prod-api-04. Can you clean it up?"</em></p>
+      <p>Don't <code>rm</code> anything yet. <strong>First, see.</strong></p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>ssh prod-api-04
+<span class="tok-prompt">$ </span>df -h                                   <span class="tok-comment"># which filesystem? /var? /var/log? /tmp?</span>
+<span class="tok-prompt">$ </span>du -sh /var/* 2&gt;/dev/null | sort -h     <span class="tok-comment"># rank top-level dirs by size</span>
+<span class="tok-prompt">$ </span>du -sh /var/log/* | sort -h | tail -5   <span class="tok-comment"># top 5 log dirs</span>
+<span class="tok-prompt">$ </span>ls -lhS /var/log/something/ | head -10  <span class="tok-comment"># largest files in the offender</span></code></pre>
+      <p>Now you have <em>evidence</em> of what's huge. Maybe an app log went to 18 GB because rotation broke. The fix isn't <code>rm</code> — it's <code>truncate -s 0 huge.log</code> (zero it but keep the file descriptor live) or fixing logrotate. <strong>The investigation takes 60 seconds; the wrong fix takes a week to recover from.</strong></p>
+
+      <h2 id="recap"><span class="secnum">§8</span>What to remember</h2>
+      <ul>
+        <li>A file is <em>name → inode → data</em>. Multiple names can share an inode.</li>
+        <li><code>ls -l</code> columns: perms, links, owner, group, size, mtime, name. Memorize this order.</li>
+        <li><code>ls -ltr</code> = "what changed most recently, newest at the bottom." Best one-liner for log inspection.</li>
+        <li><code>cp -a</code> is the safe default for backups.</li>
+        <li><code>rm</code> is permanent. Run the path through <code>ls</code> first.</li>
+        <li>99% of the time you want <code>ln -s</code> (symlink), not a hard link.</li>
+      </ul>
+
+      <a class="next-card" href="04-file-globbing.html">
+        <span class="label">NEXT · MODULE 04</span>
+        <span class="title">File globbing</span>
+        <span class="desc">Make the shell match files for you — with <code>*</code>, <code>?</code>, <code>[]</code>, <code>{}</code>.</span>
+      </a>
+    </article>
+
+    <footer class="colophon">
+      <p>NCS 205 handbook · module 03 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
+    </footer>
+  </main>
+
+  <aside class="toc" aria-label="On this page">
+    <div class="toc-title">On this page</div>
+    <ul>
+      <li><a href="#why">§1 Why this matters</a></li>
+      <li><a href="#mental-model">§2 Mental model</a></li>
+      <li><a href="#commands">§3 Core commands</a></li>
+      <li><a href="#walkthrough">§4 Walkthrough</a></li>
+      <li><a href="#gotchas">§5 Gotchas</a></li>
+      <li><a href="#drills">§6 Exercises</a></li>
+      <li><a href="#scenario">§7 Scenario</a></li>
+      <li><a href="#recap">§8 What to remember</a></li>
+    </ul>
+  </aside>
+</div>
+
+<script src="assets/site.js"></script>
+</body>
+</html>

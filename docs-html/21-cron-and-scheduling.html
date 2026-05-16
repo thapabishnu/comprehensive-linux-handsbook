@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>21 · cron &amp; scheduling — Mentor's Guide to Linux</title>
+<meta name="description" content="cron, at, systemd timers — every recurring sysadmin task." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="brand">
+    <a href="index.html" style="border:none; color: inherit; display: contents;">
+      <span class="mark">/&gt;</span>
+      <span>The Mentor's Guide to Linux</span>
+    </a>
+    <span class="sub">NCS 205 handbook</span>
+  </div>
+  <div class="right">
+    <span class="crumbs"><a href="index.html" style="color: inherit; border: none;">HOME</a> / <strong>MODULE 21</strong></span>
+    <button class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+      <span class="icon">☼</span><span class="label">PAPER</span>
+    </button>
+    <button class="menu-btn" aria-label="Open table of contents" aria-expanded="false">MENU</button>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="sidebar" id="sidebar" aria-label="Module navigation"></aside>
+
+  <main class="main" id="main">
+    <article class="module">
+      <div class="meta-row">
+        <span><span class="label">MODULE</span>21</span>
+        <span><span class="label">MAPS TO</span>LAB A1</span>
+        <span><span class="label">TIME</span>~25 min</span>
+      </div>
+
+      <h1>cron and scheduling</h1>
+      <p class="lede">Backups, log rotation, cert renewal, monitoring scripts, daily reports — most server work runs on a schedule.</p>
+
+      <h2 id="why"><span class="secnum">§1</span>Why this matters</h2>
+      <p>The two tools to know are <strong>cron</strong> (40 years of "good enough") and <strong>systemd timers</strong> (modern, more capable).</p>
+
+      <h2 id="mental-model"><span class="secnum">§2</span>Mental model</h2>
+      <p>A <strong>cron job</strong> has two parts: a schedule (5 time fields) and a command. Each user has their own crontab.</p>
+
+<pre data-lang="cron" data-nocopy="true"><code>   ┌───────────── minute (0–59)
+   │ ┌─────────── hour (0–23)
+   │ │ ┌───────── day of month (1–31)
+   │ │ │ ┌─────── month (1–12)
+   │ │ │ │ ┌───── day of week (0–6, Sun=0)
+   │ │ │ │ │
+   * * * * *  command-to-run</code></pre>
+
+      <p>Each field can be a number, <code>*</code>, a list (<code>1,15,30</code>), a range (<code>9-17</code>), or a step (<code>*/15</code>).</p>
+
+<pre data-lang="cron" data-nocopy="true"><code>   */15 * * * *           every 15 minutes
+   0 2 * * *              02:00 every day
+   0 9 * * 1-5            09:00 weekdays
+   30 4 1 * *             04:30 on the 1st of each month
+   0 0 * * 0              midnight Sunday</code></pre>
+
+      <h2 id="commands"><span class="secnum">§3</span>Core commands</h2>
+
+      <h3>Cron</h3>
+      <table>
+        <thead><tr><th>Command</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><code>crontab -l</code></td><td>List your crontab</td></tr>
+          <tr><td><code>crontab -e</code></td><td>Edit (in <code>$EDITOR</code>)</td></tr>
+          <tr><td><code>crontab -r</code></td><td>Remove (careful — no confirmation)</td></tr>
+          <tr><td><code>crontab file.txt</code></td><td>Replace crontab from file</td></tr>
+          <tr><td><code>sudo crontab -u alice -l</code></td><td>Inspect another user's crontab</td></tr>
+          <tr><td><code>cat /etc/crontab</code></td><td>System crontab</td></tr>
+          <tr><td><code>ls /etc/cron.d/</code></td><td>Drop-in system jobs</td></tr>
+          <tr><td><code>ls /etc/cron.{hourly,daily,weekly,monthly}/</code></td><td>Pre-defined schedule dirs</td></tr>
+        </tbody>
+      </table>
+
+      <h3>One-shot</h3>
+      <table>
+        <thead><tr><th>Command</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><code>at 10pm</code></td><td>Schedule a command for 10pm</td></tr>
+          <tr><td><code>at 'now + 5 minutes'</code></td><td>5 min from now</td></tr>
+          <tr><td><code>atq</code></td><td>List pending at-jobs</td></tr>
+          <tr><td><code>atrm N</code></td><td>Cancel job N</td></tr>
+        </tbody>
+      </table>
+
+      <h3>systemd timers</h3>
+      <table>
+        <thead><tr><th>Command</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><code>systemctl list-timers</code></td><td>All active timers</td></tr>
+          <tr><td><code>systemctl status mybackup.timer</code></td><td>One timer's state</td></tr>
+          <tr><td><code>systemctl enable --now mybackup.timer</code></td><td>Activate</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="walkthrough"><span class="secnum">§4</span>Guided walkthrough</h2>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cat &gt; ~/bin/log-uptime.sh &lt;&lt;'EOF'
+#!/bin/bash
+echo "$(date -Iseconds)  uptime: $(uptime -p)" &gt;&gt; "$HOME/uptime.log"
+EOF
+<span class="tok-prompt">$ </span>chmod +x ~/bin/log-uptime.sh
+
+<span class="tok-prompt">$ </span>crontab -e
+<span class="tok-comment"># add:  */5 * * * * /home/yourname/bin/log-uptime.sh</span>
+
+<span class="tok-prompt">$ </span>crontab -l
+<span class="tok-comment"># wait 5 minutes...</span>
+<span class="tok-prompt">$ </span>tail -5 ~/uptime.log</code></pre>
+
+      <h3><code>at</code> for one-shot</h3>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>echo "shutdown -r" | at now + 5 minutes     <span class="tok-comment"># reboot in 5 (don't actually run!)</span>
+<span class="tok-prompt">$ </span>atq
+<span class="tok-prompt">$ </span>atrm 1</code></pre>
+
+      <h2 id="timers"><span class="secnum">§5</span>systemd timers</h2>
+      <p><strong><code>/etc/systemd/system/mybackup.service</code></strong>:</p>
+<pre data-lang="ini"><code>[Unit]
+Description=My backup
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/backup.sh</code></pre>
+
+      <p><strong><code>/etc/systemd/system/mybackup.timer</code></strong>:</p>
+<pre data-lang="ini"><code>[Unit]
+Description=Daily 02:00 backup
+
+[Timer]
+OnCalendar=*-*-* 02:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target</code></pre>
+
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo systemctl daemon-reload
+<span class="tok-prompt">$ </span>sudo systemctl enable --now mybackup.timer
+<span class="tok-prompt">$ </span>systemctl list-timers --all | grep mybackup
+<span class="tok-prompt">$ </span>journalctl -u mybackup.service</code></pre>
+
+      <p><code>Persistent=true</code> means if the machine was off at 02:00, the timer runs the <em>next time it boots</em> — cron can't do that without help.</p>
+
+      <h2 id="gotchas"><span class="secnum">§6</span>Gotchas</h2>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · cron's env is minimal</span>
+        <p>No <code>PATH</code> beyond <code>/usr/bin:/bin</code>, no aliases. Set <code>PATH</code> in the crontab or the script.</p>
+      </div>
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · redirect output</span>
+        <p>Without <code>MAILTO=</code>, cron tries to mail you stdout/stderr. Best: redirect inside the entry: <code>&gt;&gt; /var/log/myjob.log 2&gt;&amp;1</code>.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · cron uses <code>/bin/sh</code>, not bash</span>
+        <p>Your bash-isms may fail. Wrap in <code>bash -c '...'</code> or call a script with <code>#!/bin/bash</code>.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · <code>crontab -r</code> wipes silently</span>
+        <p>Always <code>crontab -l &gt; /tmp/crontab-backup.txt</code> first.</p>
+      </div>
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · systemd timer failures</span>
+        <p>Timers don't fire if the unit is failed. <code>systemctl reset-failed mybackup.service</code> after fixing a bug.</p>
+      </div>
+
+      <h2 id="drills"><span class="secnum">§7</span>On-the-spot exercises</h2>
+
+      <div class="exercise">
+        <p><span class="ex-id">E21.1</span>Cron schedule for "every weekday at 5 PM."</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="cron" data-nocopy="true"><code>0 17 * * 1-5</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E21.2</span>"Every 10 minutes."</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="cron" data-nocopy="true"><code>*/10 * * * *</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E21.3</span>Cron entry running <code>/usr/local/bin/backup.sh</code> at 2 AM daily, logging to <code>/var/log/backup.log</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="cron" data-nocopy="true"><code>0 2 * * * /usr/local/bin/backup.sh &gt;&gt; /var/log/backup.log 2&gt;&amp;1</code></pre>
+          <p>Critical: redirect both streams or you'll lose stderr.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E21.4</span>Show your current crontab.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>crontab -l</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E21.5</span>Back up your crontab, then restore from it.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>crontab -l &gt; /tmp/crontab.txt
+<span class="tok-prompt">$ </span>crontab /tmp/crontab.txt</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E21.6</span>Schedule "reboot at 3 AM tomorrow" as a one-shot.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>echo "/sbin/reboot" | sudo at 3am tomorrow</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E21.7</span>Find when <code>logrotate.timer</code> fires next.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>systemctl list-timers --all | grep logrotate</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E21.8</span>A cron job runs but does nothing visible. Where to check?</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo grep CRON /var/log/syslog | tail -20
+<span class="tok-prompt">$ </span>tail /tmp/myjob.log
+<span class="tok-prompt">$ </span>env -i PATH=/usr/bin:/bin /path/to/myjob.sh</code></pre>
+          <p><code>env -i</code> clears the environment — reproduces "works in my shell, fails in cron."</p>
+        </div></details>
+      </div>
+
+      <h2 id="scenario"><span class="secnum">§8</span>Real-world sysadmin scenario</h2>
+      <p><strong>"The nightly backup didn't run last night."</strong></p>
+<pre data-lang="sh"><code><span class="tok-comment"># 1. Did cron fire?</span>
+<span class="tok-prompt">$ </span>sudo grep -E 'CRON.*(backup|root)' /var/log/syslog | tail -20
+
+<span class="tok-comment"># 2. If yes, what did it output?</span>
+<span class="tok-prompt">$ </span>tail -50 /var/log/backup.log
+
+<span class="tok-comment"># 3. Reproduce with cron's environment</span>
+<span class="tok-prompt">$ </span>sudo env -i PATH=/usr/bin:/bin /usr/local/bin/backup.sh
+
+<span class="tok-comment"># 4. Look for resource starvation</span>
+<span class="tok-prompt">$ </span>journalctl --since "yesterday 02:00" --until "yesterday 02:30"</code></pre>
+
+      <p>Two leading reasons cron jobs fail: minimal PATH; typo or stale comment.</p>
+      <p>Modern pattern: systemd timer with <code>OnFailure=alert@%n.service</code> for notifications.</p>
+
+      <h2 id="recap"><span class="secnum">§9</span>What to remember</h2>
+      <ul>
+        <li>5 fields: <code>min hour dom mon dow</code>. Use <code>*/N</code> for "every N."</li>
+        <li>Cron's env is minimal. Set <code>PATH</code> and redirect output.</li>
+        <li><code>crontab -l &gt; backup.txt</code> before any risky edit.</li>
+        <li>For anything serious in 2026: <strong>systemd timer</strong> &gt; cron.</li>
+        <li>Both still common. Read both.</li>
+      </ul>
+
+      <a class="next-card" href="22-logs-and-troubleshooting.html">
+        <span class="label">NEXT · MODULE 22</span>
+        <span class="title">Logs &amp; troubleshooting</span>
+        <span class="desc">Read <code>/var/log</code>, <code>journalctl</code>, triage failing systems.</span>
+      </a>
+    </article>
+
+    <footer class="colophon">
+      <p>NCS 205 handbook · module 21 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
+    </footer>
+  </main>
+
+  <aside class="toc" aria-label="On this page">
+    <div class="toc-title">On this page</div>
+    <ul>
+      <li><a href="#why">§1 Why this matters</a></li>
+      <li><a href="#mental-model">§2 Mental model</a></li>
+      <li><a href="#commands">§3 Core commands</a></li>
+      <li><a href="#walkthrough">§4 Walkthrough</a></li>
+      <li><a href="#timers">§5 systemd timers</a></li>
+      <li><a href="#gotchas">§6 Gotchas</a></li>
+      <li><a href="#drills">§7 Exercises</a></li>
+      <li><a href="#scenario">§8 Scenario</a></li>
+      <li><a href="#recap">§9 What to remember</a></li>
+    </ul>
+  </aside>
+</div>
+
+<script src="assets/site.js"></script>
+</body>
+</html>

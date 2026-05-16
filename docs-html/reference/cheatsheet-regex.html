@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Cheatsheet · Regex — Mentor's Guide to Linux</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="brand">
+    <a href="../index.html" style="border:none; color: inherit; display: contents;">
+      <span class="mark">/&gt;</span>
+      <span>The Mentor's Guide to Linux</span>
+    </a>
+    <span class="sub">NCS 205 handbook</span>
+  </div>
+  <div class="right">
+    <span class="crumbs"><a href="../index.html" style="color: inherit; border: none;">HOME</a> / REFERENCE / <strong>regex</strong></span>
+    <button class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+      <span class="icon">☼</span><span class="label">PAPER</span>
+    </button>
+    <button class="menu-btn" aria-label="Open table of contents" aria-expanded="false">MENU</button>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="sidebar" id="sidebar" aria-label="Module navigation"></aside>
+
+  <main class="main" id="main">
+    <article class="module">
+      <h1>Regex cheatsheet</h1>
+      <p class="lede">For <code>grep -E</code>, <code>sed -E</code>, <code>awk</code>, vim's <code>/</code>, and most languages' regex libraries.</p>
+
+      <h2 id="matchers">Single-character matchers</h2>
+      <table>
+        <thead><tr><th>Pattern</th><th>Matches</th></tr></thead>
+        <tbody>
+          <tr><td><code>a</code></td><td>The literal <code>a</code></td></tr>
+          <tr><td><code>.</code></td><td>Any single character (except newline by default)</td></tr>
+          <tr><td><code>[abc]</code></td><td>One of <code>a</code>, <code>b</code>, <code>c</code></td></tr>
+          <tr><td><code>[a-z]</code></td><td>One lowercase letter</td></tr>
+          <tr><td><code>[A-Z0-9]</code></td><td>One uppercase letter or digit</td></tr>
+          <tr><td><code>[^abc]</code></td><td>One char NOT in the set</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="anchors">Anchors</h2>
+      <table>
+        <thead><tr><th>Pattern</th><th>Matches</th></tr></thead>
+        <tbody>
+          <tr><td><code>^</code></td><td>Start of line</td></tr>
+          <tr><td><code>$</code></td><td>End of line</td></tr>
+          <tr><td><code>\b</code></td><td>Word boundary</td></tr>
+          <tr><td><code>\B</code></td><td>Not a word boundary</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="quantifiers">Quantifiers</h2>
+      <table>
+        <thead><tr><th>Pattern</th><th>Means</th></tr></thead>
+        <tbody>
+          <tr><td><code>*</code></td><td>Zero or more</td></tr>
+          <tr><td><code>+</code></td><td>One or more (ERE)</td></tr>
+          <tr><td><code>?</code></td><td>Zero or one (ERE)</td></tr>
+          <tr><td><code>{n}</code></td><td>Exactly n</td></tr>
+          <tr><td><code>{n,}</code></td><td>n or more</td></tr>
+          <tr><td><code>{n,m}</code></td><td>Between n and m</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="grouping">Grouping / alternation</h2>
+      <table>
+        <thead><tr><th>Pattern</th><th>Means</th></tr></thead>
+        <tbody>
+          <tr><td><code>(abc)</code></td><td>Group; capture group #1</td></tr>
+          <tr><td><code>(?:abc)</code></td><td>Non-capturing group (PCRE only)</td></tr>
+          <tr><td><code>a|b</code></td><td><code>a</code> or <code>b</code> (ERE)</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="classes">POSIX character classes</h2>
+      <table>
+        <thead><tr><th>Class</th><th>Equivalent</th><th>What</th></tr></thead>
+        <tbody>
+          <tr><td><code>[[:digit:]]</code></td><td><code>[0-9]</code></td><td>Digit</td></tr>
+          <tr><td><code>[[:alpha:]]</code></td><td><code>[A-Za-z]</code></td><td>Letter</td></tr>
+          <tr><td><code>[[:alnum:]]</code></td><td><code>[A-Za-z0-9]</code></td><td>Letter or digit</td></tr>
+          <tr><td><code>[[:lower:]]</code> / <code>[[:upper:]]</code></td><td><code>[a-z]</code> / <code>[A-Z]</code></td><td>Letter case</td></tr>
+          <tr><td><code>[[:space:]]</code></td><td><code> \t\n\r\f\v</code></td><td>Whitespace</td></tr>
+          <tr><td><code>[[:xdigit:]]</code></td><td>hex digit</td><td><code>[0-9A-Fa-f]</code></td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="pcre">PCRE shortcuts</h2>
+      <table>
+        <thead><tr><th>Pattern</th><th>Matches</th></tr></thead>
+        <tbody>
+          <tr><td><code>\d</code> / <code>\D</code></td><td>Digit / non-digit</td></tr>
+          <tr><td><code>\w</code> / <code>\W</code></td><td>Word char / non-word</td></tr>
+          <tr><td><code>\s</code> / <code>\S</code></td><td>Whitespace / non-whitespace</td></tr>
+          <tr><td><code>\n</code> <code>\t</code> <code>\r</code></td><td>Newline, tab, CR</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="lookaround">Lookaround (PCRE; <code>grep -P</code>)</h2>
+      <table>
+        <thead><tr><th>Pattern</th><th>Matches</th></tr></thead>
+        <tbody>
+          <tr><td><code>(?=X)</code></td><td>Lookahead — followed by X</td></tr>
+          <tr><td><code>(?!X)</code></td><td>Negative lookahead</td></tr>
+          <tr><td><code>(?&lt;=X)</code></td><td>Lookbehind</td></tr>
+          <tr><td><code>(?&lt;!X)</code></td><td>Negative lookbehind</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="recipes">Common recipes</h2>
+      <table>
+        <thead><tr><th>Goal</th><th>Pattern</th></tr></thead>
+        <tbody>
+          <tr><td>IPv4</td><td><code>[0-9]{1,3}(\.[0-9]{1,3}){3}</code></td></tr>
+          <tr><td>Email-ish</td><td><code>[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}</code></td></tr>
+          <tr><td>URL-ish</td><td><code>https?://[^\s]+</code></td></tr>
+          <tr><td>Hex color</td><td><code>#[0-9A-Fa-f]{6}</code></td></tr>
+          <tr><td>Date YYYY-MM-DD</td><td><code>[0-9]{4}-[0-9]{2}-[0-9]{2}</code></td></tr>
+          <tr><td>ISO timestamp</td><td><code>[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.]+Z?</code></td></tr>
+          <tr><td>Whitespace line</td><td><code>^[[:space:]]*$</code></td></tr>
+          <tr><td>Comment + blank line</td><td><code>^[[:space:]]*(#|$)</code></td></tr>
+          <tr><td>Match between quotes</td><td><code>"[^"]*"</code></td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="flavors">Flavors at a glance</h2>
+      <table>
+        <thead><tr><th>Tool</th><th>Default</th><th>"Extended"</th><th>Lookarounds</th></tr></thead>
+        <tbody>
+          <tr><td><code>grep</code></td><td>BRE</td><td><code>grep -E</code></td><td><code>grep -P</code></td></tr>
+          <tr><td><code>sed</code></td><td>BRE</td><td><code>sed -E</code></td><td>no</td></tr>
+          <tr><td><code>awk</code></td><td>ERE</td><td>n/a</td><td>no</td></tr>
+          <tr><td><code>vim</code></td><td>"magic"</td><td><code>\v</code></td><td>no</td></tr>
+          <tr><td>Python <code>re</code></td><td>PCRE-like</td><td>yes</td><td>yes</td></tr>
+          <tr><td>JavaScript</td><td>PCRE-ish</td><td>yes</td><td>yes</td></tr>
+        </tbody>
+      </table>
+
+      <p><strong>In BRE, escape <code>?</code>, <code>+</code>, <code>{</code>, <code>}</code>, <code>|</code>, <code>(</code>, <code>)</code> with <code>\</code> to use them as operators.</strong> Easier: just use ERE.</p>
+
+      <h2 id="always">Always</h2>
+      <ul>
+        <li>Quote your pattern in the shell: <code>'^[A-Z]+$'</code>.</li>
+        <li>Anchor when you mean to: <code>^pattern</code>, <code>pattern$</code>, or both.</li>
+        <li>Greedy is the default. Use <code>[^X]*</code> for "lazy-ish" in BRE/ERE.</li>
+      </ul>
+    </article>
+  </main>
+
+  <aside class="toc" aria-label="On this page">
+    <div class="toc-title">On this page</div>
+    <ul>
+      <li><a href="#matchers">Matchers</a></li>
+      <li><a href="#anchors">Anchors</a></li>
+      <li><a href="#quantifiers">Quantifiers</a></li>
+      <li><a href="#grouping">Grouping</a></li>
+      <li><a href="#classes">POSIX classes</a></li>
+      <li><a href="#pcre">PCRE shortcuts</a></li>
+      <li><a href="#lookaround">Lookaround</a></li>
+      <li><a href="#recipes">Recipes</a></li>
+      <li><a href="#flavors">Flavors</a></li>
+    </ul>
+  </aside>
+</div>
+
+<script src="../assets/site.js"></script>
+</body>
+</html>

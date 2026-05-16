@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>08 · Redirection &amp; pipes — Mentor's Guide to Linux</title>
+<meta name="description" content="The three streams, redirection operators, and the pipe — Unix's composition glue." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="brand">
+    <a href="index.html" style="border:none; color: inherit; display: contents;">
+      <span class="mark">/&gt;</span>
+      <span>The Mentor's Guide to Linux</span>
+    </a>
+    <span class="sub">NCS 205 handbook</span>
+  </div>
+  <div class="right">
+    <span class="crumbs"><a href="index.html" style="color: inherit; border: none;">HOME</a> / <strong>MODULE 08</strong></span>
+    <button class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+      <span class="icon">☼</span><span class="label">PAPER</span>
+    </button>
+    <button class="menu-btn" aria-label="Open table of contents" aria-expanded="false">MENU</button>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="sidebar" id="sidebar" aria-label="Module navigation"></aside>
+
+  <main class="main" id="main">
+    <article class="module">
+      <div class="meta-row">
+        <span><span class="label">MODULE</span>08</span>
+        <span><span class="label">MAPS TO</span>LAB 19</span>
+        <span><span class="label">TIME</span>~30 min</span>
+      </div>
+
+      <h1>Redirection and pipes</h1>
+      <p class="lede">Unix's superpower isn't any one tool — it's that small tools <em>compose</em>. Redirection and piping are the wiring.</p>
+
+      <h2 id="why"><span class="secnum">§1</span>Why this matters</h2>
+      <p>Once you internalize the three standard streams and the operators that bend them, you stop seeing commands as isolated and start seeing pipelines.</p>
+
+      <h2 id="mental-model"><span class="secnum">§2</span>Mental model</h2>
+      <p>Every program has three open file descriptors by default:</p>
+      <table>
+        <thead><tr><th>FD</th><th>Name</th><th>Default destination</th></tr></thead>
+        <tbody>
+          <tr><td><code>0</code></td><td><strong>stdin</strong></td><td>Your keyboard</td></tr>
+          <tr><td><code>1</code></td><td><strong>stdout</strong></td><td>Your terminal</td></tr>
+          <tr><td><code>2</code></td><td><strong>stderr</strong></td><td>Your terminal</td></tr>
+        </tbody>
+      </table>
+      <p>You can redirect any of them:</p>
+<pre data-lang="diagram" data-nocopy="true"><code>    program  ──1──►  stdout       │  redirect with  >   >>
+    program  ──2──►  stderr       │  redirect with  2>  2>>
+    program  ◄──0──  stdin        │  redirect with  &lt;</code></pre>
+
+      <p>And you can wire one program's stdout into another's stdin — that's the pipe:</p>
+<pre data-lang="diagram" data-nocopy="true"><code>    cmd1  ──1──►  ──0──►  cmd2  ──1──►  ──0──►  cmd3
+                  pipe              pipe</code></pre>
+
+      <p>Two huge insights:</p>
+      <ol>
+        <li><strong>stdout and stderr are separate.</strong> A command that fails quietly on the terminal is often complaining loudly on stderr — you just merged them. To see them apart: <code>cmd &gt; out 2&gt; err</code>.</li>
+        <li><strong>Pipes only connect stdout to stdin.</strong> If you want stderr in the pipeline too, merge it first: <code>cmd 2&gt;&amp;1 | next</code>.</li>
+      </ol>
+
+      <h2 id="commands"><span class="secnum">§3</span>Core operators</h2>
+      <table>
+        <thead><tr><th>Operator</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><code>cmd &gt; file</code></td><td>stdout → file (overwrite)</td></tr>
+          <tr><td><code>cmd &gt;&gt; file</code></td><td>stdout → file (append)</td></tr>
+          <tr><td><code>cmd 2&gt; file</code></td><td>stderr → file</td></tr>
+          <tr><td><code>cmd 2&gt;&gt; file</code></td><td>stderr append</td></tr>
+          <tr><td><code>cmd &gt; out 2&gt; err</code></td><td>split stdout and stderr</td></tr>
+          <tr><td><code>cmd &gt; file 2&gt;&amp;1</code></td><td>both to same file (note: order matters!)</td></tr>
+          <tr><td><code>cmd &amp;&gt; file</code></td><td>bash shorthand for <code>&gt; file 2&gt;&amp;1</code></td></tr>
+          <tr><td><code>cmd 2&gt;&amp;1 | next</code></td><td>feed both streams into the pipeline</td></tr>
+          <tr><td><code>cmd &lt; file</code></td><td>read stdin from a file</td></tr>
+          <tr><td><code>cmd1 | cmd2</code></td><td>stdout of cmd1 → stdin of cmd2</td></tr>
+          <tr><td><code>cmd | tee file</code></td><td>print to terminal <strong>and</strong> save to file</td></tr>
+          <tr><td><code>cmd | tee -a file</code></td><td>same, but append</td></tr>
+          <tr><td><code>cmd &gt; /dev/null</code></td><td>discard stdout</td></tr>
+          <tr><td><code>cmd 2&gt; /dev/null</code></td><td>discard stderr</td></tr>
+          <tr><td><code>cmd &gt;/dev/null 2&gt;&amp;1</code></td><td>discard everything (the classic "silence" idiom)</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · why order matters</span>
+        <p><code>2&gt;&amp;1</code> says "send fd 2 to wherever fd 1 currently goes." That's why <code>cmd &gt; file 2&gt;&amp;1</code> works but <code>cmd 2&gt;&amp;1 &gt; file</code> does not — in the second form, <code>2&gt;&amp;1</code> is set up <em>before</em> <code>&gt;</code> moves fd 1, so stderr still ends up on the terminal.</p>
+      </div>
+
+      <h2 id="walkthrough"><span class="secnum">§4</span>Guided walkthrough</h2>
+<pre data-lang="sh"><code><span class="tok-comment"># stdout to a file</span>
+<span class="tok-prompt">$ </span>echo "hello" &gt; greeting.txt
+<span class="tok-prompt">$ </span>cat greeting.txt
+
+<span class="tok-comment"># overwrite</span>
+<span class="tok-prompt">$ </span>echo "again" &gt; greeting.txt
+<span class="tok-prompt">$ </span>cat greeting.txt           <span class="tok-comment"># only "again"</span>
+
+<span class="tok-comment"># append</span>
+<span class="tok-prompt">$ </span>echo "and again" &gt;&gt; greeting.txt
+<span class="tok-prompt">$ </span>cat greeting.txt
+
+<span class="tok-comment"># stderr separately</span>
+<span class="tok-prompt">$ </span>ls /nonexistent 2&gt; errors.log
+<span class="tok-prompt">$ </span>cat errors.log
+
+<span class="tok-comment"># merge both streams</span>
+<span class="tok-prompt">$ </span>ls /etc /nonexistent &gt; combined.log 2&gt;&amp;1
+<span class="tok-prompt">$ </span>cat combined.log
+
+<span class="tok-comment"># discard noise</span>
+<span class="tok-prompt">$ </span>find / -name passwd 2&gt;/dev/null | head -5
+
+<span class="tok-comment"># piping</span>
+<span class="tok-prompt">$ </span>ls /etc | wc -l            <span class="tok-comment"># how many entries in /etc?</span>
+<span class="tok-prompt">$ </span>ls -lt /var/log | head -5  <span class="tok-comment"># 5 most recently modified logs</span>
+
+<span class="tok-comment"># tee — see and save</span>
+<span class="tok-prompt">$ </span>echo "deployed" | tee -a /tmp/deploy.log
+
+<span class="tok-comment"># input redirection</span>
+<span class="tok-prompt">$ </span>wc -l &lt; /etc/passwd        <span class="tok-comment"># wc reads from a redirected stdin</span></code></pre>
+
+      <p>Try this drill: count how many of your <code>man</code> pages are in section 5:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>man -k . 2&gt;/dev/null | grep '(5)' | wc -l</code></pre>
+      <p>Three-stage pipeline doing real work in a single line.</p>
+
+      <h2 id="gotchas"><span class="secnum">§5</span>Gotchas</h2>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · <code>&gt;</code> truncates instantly</span>
+        <p>Even if the command fails. <code>echo &gt; important.txt</code> <em>empties</em> the file <em>before</em> <code>echo</code> runs. Use <code>&gt;&gt;</code> if you mean append, and <code>set -o noclobber</code> in scripts.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · order of <code>&gt;</code> and <code>2&gt;&amp;1</code></span>
+        <p>Always put <code>2&gt;&amp;1</code> <em>after</em> <code>&gt; file</code>. Otherwise stderr won't follow stdout into the file.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · <code>tee</code> doesn't capture stderr</span>
+        <p><code>cmd | tee log</code> only tees stdout. To tee both: <code>cmd 2&gt;&amp;1 | tee log</code>.</p>
+      </div>
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · pipelines run in parallel</span>
+        <p><code>cmd1 | cmd2</code> doesn't wait for cmd1 to finish — both run, with the pipe as a streaming buffer. For ordered processing keep that in mind.</p>
+      </div>
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · exit codes in pipelines</span>
+        <p>By default the pipeline's exit code is <code>cmd2</code>'s. To check cmd1 failed: <code>set -o pipefail</code> makes the pipeline fail if <em>any</em> stage fails. Critical for scripts.</p>
+      </div>
+
+      <h2 id="drills"><span class="secnum">§6</span>On-the-spot exercises</h2>
+
+      <div class="exercise">
+        <p><span class="ex-id">E8.1</span>Save the output of <code>ls /etc</code> to a file called <code>etc-listing.txt</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>ls /etc &gt; etc-listing.txt</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E8.2</span>Append today's date to <code>~/work.log</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>date &gt;&gt; ~/work.log</code></pre>
+          <p><code>&gt;&gt;</code> (not <code>&gt;</code>!) — otherwise you'd overwrite the log.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E8.3</span>Run <code>ls /etc /nope</code> and put the listing in <code>out.txt</code>, the errors in <code>err.txt</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>ls /etc /nope &gt; out.txt 2&gt; err.txt</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E8.4</span>Same command, but combine <em>everything</em> into <code>all.log</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>ls /etc /nope &gt; all.log 2&gt;&amp;1
+<span class="tok-comment"># or bash shorthand:</span>
+<span class="tok-prompt">$ </span>ls /etc /nope &amp;&gt; all.log</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E8.5</span>Count how many <code>.conf</code> files are directly under <code>/etc/</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>ls /etc/*.conf | wc -l</code></pre>
+          <p>Globbing (mod 04) + a pipe + <code>wc</code>.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E8.6</span>Show all 200 responses from the access.log sandbox, then count them.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>grep ' 200 ' ~/ncs205-sandbox/text/access.log
+<span class="tok-prompt">$ </span>grep ' 200 ' ~/ncs205-sandbox/text/access.log | wc -l</code></pre>
+          <p>Or chain into one display:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>grep ' 200 ' ~/ncs205-sandbox/text/access.log | tee /tmp/200s.log | wc -l</code></pre>
+          <p><code>tee</code> lets you save the matches AND print the count.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E8.7</span>Discard <code>find</code>'s noisy "Permission denied" errors while searching <code>/etc</code> for files containing "host" in the name.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>find /etc -name '*host*' 2&gt;/dev/null</code></pre>
+          <p><code>/dev/null</code> is the bit bucket — anything sent there is destroyed.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E8.8</span>Without using <code>cat</code>, send the contents of <code>~/ncs205-sandbox/text/names.txt</code> into <code>wc -l</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>wc -l &lt; ~/ncs205-sandbox/text/names.txt</code></pre>
+          <p><code>&lt;</code> redirects the file in as stdin. <code>wc</code> would also accept a filename directly — but <code>&lt;</code> is the <em>redirection</em> form, which is what the exercise asks for.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E8.9</span>Build a one-liner: "the 3 most active IPs in the access log."</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>awk '{print $1}' ~/ncs205-sandbox/text/access.log \
+  | sort | uniq -c | sort -rn | head -3</code></pre>
+          <p>5 stages: extract field, sort to group, count duplicates, sort numerically descending, take top 3. We'll meet <code>awk</code> properly in module 13.</p>
+        </div></details>
+      </div>
+
+      <h2 id="scenario"><span class="secnum">§7</span>Real-world sysadmin scenario</h2>
+      <p><strong>Long-running deploy script.</strong> A teammate writes a script that runs for 20 minutes and you want to know:</p>
+      <ol>
+        <li>Did it succeed?</li>
+        <li>What did it print?</li>
+        <li>Were there any errors that didn't make it to the visible output?</li>
+      </ol>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>./deploy.sh &gt; /tmp/deploy.out 2&gt; /tmp/deploy.err
+<span class="tok-prompt">$ </span>echo "Exit: $?"</code></pre>
+      <p>If <code>$?</code> is <code>0</code>, success. The two files contain stdout and stderr separately. If you wanted to <em>watch</em> in real time AND keep a record:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>./deploy.sh 2&gt;&amp;1 | tee /tmp/deploy.log
+<span class="tok-prompt">$ </span>echo "Pipeline exit: ${PIPESTATUS[0]}"</code></pre>
+      <p><code>PIPESTATUS[0]</code> gives the <em>first</em> stage's exit code. Without that, <code>$?</code> would only tell you that <code>tee</code> succeeded — which is almost always true. This is what separates "I ran the script" from "I ran the script <em>and know whether it worked</em>."</p>
+
+      <h2 id="recap"><span class="secnum">§8</span>What to remember</h2>
+      <ul>
+        <li>Three streams: stdin (0), stdout (1), stderr (2). Memorize the numbers.</li>
+        <li><code>&gt;</code> overwrites, <code>&gt;&gt;</code> appends. <code>2&gt;</code> for stderr.</li>
+        <li><code>2&gt;&amp;1</code> after the stdout redirect, never before.</li>
+        <li><code>|</code> connects stdout → stdin. Use <code>2&gt;&amp;1 |</code> to pipe both.</li>
+        <li><code>tee</code> shows AND saves. <code>/dev/null</code> is the silence switch.</li>
+        <li>In scripts, <code>set -o pipefail</code> + <code>${PIPESTATUS[@]}</code> are how you check pipeline failures.</li>
+      </ul>
+
+      <a class="next-card" href="09-grep-and-regex.html">
+        <span class="label">NEXT · MODULE 09</span>
+        <span class="title">grep &amp; regular expressions</span>
+        <span class="desc">Filter pipelines by pattern. Read regex without panic.</span>
+      </a>
+    </article>
+
+    <footer class="colophon">
+      <p>NCS 205 handbook · module 08 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
+    </footer>
+  </main>
+
+  <aside class="toc" aria-label="On this page">
+    <div class="toc-title">On this page</div>
+    <ul>
+      <li><a href="#why">§1 Why this matters</a></li>
+      <li><a href="#mental-model">§2 Mental model</a></li>
+      <li><a href="#commands">§3 Core operators</a></li>
+      <li><a href="#walkthrough">§4 Walkthrough</a></li>
+      <li><a href="#gotchas">§5 Gotchas</a></li>
+      <li><a href="#drills">§6 Exercises</a></li>
+      <li><a href="#scenario">§7 Scenario</a></li>
+      <li><a href="#recap">§8 What to remember</a></li>
+    </ul>
+  </aside>
+</div>
+
+<script src="assets/site.js"></script>
+</body>
+</html>

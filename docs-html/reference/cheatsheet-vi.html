@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Cheatsheet · vi — Mentor's Guide to Linux</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="brand">
+    <a href="../index.html" style="border:none; color: inherit; display: contents;">
+      <span class="mark">/&gt;</span>
+      <span>The Mentor's Guide to Linux</span>
+    </a>
+    <span class="sub">NCS 205 handbook</span>
+  </div>
+  <div class="right">
+    <span class="crumbs"><a href="../index.html" style="color: inherit; border: none;">HOME</a> / REFERENCE / <strong>vi</strong></span>
+    <button class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+      <span class="icon">☼</span><span class="label">PAPER</span>
+    </button>
+    <button class="menu-btn" aria-label="Open table of contents" aria-expanded="false">MENU</button>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="sidebar" id="sidebar" aria-label="Module navigation"></aside>
+
+  <main class="main" id="main">
+    <article class="module">
+      <h1>vi / vim cheatsheet</h1>
+      <p class="lede">Print this. Tape it next to your monitor.</p>
+
+      <h2 id="modes">Modes</h2>
+      <table>
+        <thead><tr><th>From</th><th>To</th><th>Press</th></tr></thead>
+        <tbody>
+          <tr><td>Normal</td><td>Insert</td><td><code>i</code> (before), <code>a</code> (after), <code>I</code> (line start), <code>A</code> (line end), <code>o</code> (open below), <code>O</code> (open above)</td></tr>
+          <tr><td>Any</td><td>Normal</td><td><kbd>Esc</kbd></td></tr>
+          <tr><td>Normal</td><td>Command-line</td><td><code>:</code></td></tr>
+          <tr><td>Normal</td><td>Visual</td><td><code>v</code> (char) / <code>V</code> (line) / <kbd>Ctrl</kbd>+<kbd>v</kbd> (block)</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="survival">Survival kit</h2>
+      <table>
+        <thead><tr><th>Action</th><th>Press</th></tr></thead>
+        <tbody>
+          <tr><td>Save</td><td><code>:w</code></td></tr>
+          <tr><td>Quit</td><td><code>:q</code></td></tr>
+          <tr><td>Save + quit</td><td><code>:wq</code> or <kbd>ZZ</kbd></td></tr>
+          <tr><td>Quit, discard</td><td><code>:q!</code></td></tr>
+          <tr><td>Undo / redo</td><td><kbd>u</kbd> / <kbd>Ctrl</kbd>+<kbd>R</kbd></td></tr>
+          <tr><td>Repeat last edit</td><td><kbd>.</kbd></td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="motion">Motion (Normal mode)</h2>
+      <table>
+        <thead><tr><th>Move</th><th>Key</th></tr></thead>
+        <tbody>
+          <tr><td>Left/down/up/right</td><td><kbd>h</kbd> <kbd>j</kbd> <kbd>k</kbd> <kbd>l</kbd></td></tr>
+          <tr><td>Word forward / back</td><td><kbd>w</kbd> / <kbd>b</kbd></td></tr>
+          <tr><td>Word end</td><td><kbd>e</kbd></td></tr>
+          <tr><td>Beginning of line</td><td><kbd>0</kbd> (col 0), <kbd>^</kbd> (first non-blank)</td></tr>
+          <tr><td>End of line</td><td><kbd>$</kbd></td></tr>
+          <tr><td>Top / bottom of file</td><td><kbd>gg</kbd> / <kbd>G</kbd></td></tr>
+          <tr><td>Line N</td><td><code>:N</code> (or <code>Ngg</code>)</td></tr>
+          <tr><td>Page down / up</td><td><kbd>Ctrl</kbd>+<kbd>f</kbd> / <kbd>Ctrl</kbd>+<kbd>b</kbd></td></tr>
+          <tr><td>Half-page</td><td><kbd>Ctrl</kbd>+<kbd>d</kbd> / <kbd>Ctrl</kbd>+<kbd>u</kbd></td></tr>
+          <tr><td>Match bracket / paren</td><td><kbd>%</kbd></td></tr>
+          <tr><td>Find char on line</td><td><kbd>f</kbd>&lt;char&gt;; <kbd>;</kbd> next, <kbd>,</kbd> previous</td></tr>
+          <tr><td>Find word under cursor</td><td><kbd>*</kbd> (forward), <kbd>#</kbd> (back)</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="editing">Editing (Normal mode)</h2>
+      <table>
+        <thead><tr><th>Action</th><th>Keys</th></tr></thead>
+        <tbody>
+          <tr><td>Delete char</td><td><kbd>x</kbd></td></tr>
+          <tr><td>Delete line</td><td><kbd>dd</kbd></td></tr>
+          <tr><td>Delete N lines</td><td><code>Ndd</code></td></tr>
+          <tr><td>Delete to end of line</td><td><kbd>d$</kbd> or <kbd>D</kbd></td></tr>
+          <tr><td>Delete word</td><td><kbd>dw</kbd></td></tr>
+          <tr><td>Yank (copy) line</td><td><kbd>yy</kbd></td></tr>
+          <tr><td>Yank N lines</td><td><code>Nyy</code></td></tr>
+          <tr><td>Yank word</td><td><kbd>yw</kbd></td></tr>
+          <tr><td>Paste</td><td><kbd>p</kbd> (after), <kbd>P</kbd> (before)</td></tr>
+          <tr><td>Change line</td><td><kbd>cc</kbd></td></tr>
+          <tr><td>Change word</td><td><kbd>cw</kbd></td></tr>
+          <tr><td>Replace one char</td><td><kbd>r</kbd>&lt;char&gt;</td></tr>
+          <tr><td>Join lines</td><td><kbd>J</kbd></td></tr>
+          <tr><td>Indent / dedent line</td><td><kbd>&gt;&gt;</kbd> / <kbd>&lt;&lt;</kbd></td></tr>
+          <tr><td>Toggle case</td><td><kbd>~</kbd></td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="grammar">The grammar</h2>
+      <p><code>[count][operator][motion]</code> — most edit commands fit this pattern.</p>
+      <ul>
+        <li><code>5dd</code> — delete 5 lines</li>
+        <li><code>d3w</code> — delete 3 words</li>
+        <li><code>y$</code> — yank to end of line</li>
+        <li><code>c2j</code> — change 2 lines downward</li>
+      </ul>
+      <p>Operators: <code>d</code> delete, <code>y</code> yank, <code>c</code> change, <code>&gt;</code> indent, <code>&lt;</code> dedent, <code>=</code> reformat.</p>
+
+      <h2 id="search">Search &amp; replace</h2>
+      <table>
+        <thead><tr><th>Command</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><code>/pattern</code></td><td>Search forward — <kbd>n</kbd> next, <kbd>N</kbd> prev</td></tr>
+          <tr><td><code>?pattern</code></td><td>Search backward</td></tr>
+          <tr><td><code>:%s/old/new/g</code></td><td>Replace all in file</td></tr>
+          <tr><td><code>:%s/old/new/gc</code></td><td>All in file, confirm each</td></tr>
+          <tr><td><code>:5,20s/old/new/g</code></td><td>In lines 5–20</td></tr>
+          <tr><td><code>:noh</code></td><td>Clear highlight</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="vimrc">Minimal <code>~/.vimrc</code></h2>
+<pre data-lang="vim"><code>syntax on
+set number
+set hlsearch
+set incsearch
+set ignorecase smartcase
+set autoindent
+set expandtab
+set shiftwidth=4
+set tabstop=4
+set ruler
+set showcmd
+set wildmenu</code></pre>
+    </article>
+  </main>
+
+  <aside class="toc" aria-label="On this page">
+    <div class="toc-title">On this page</div>
+    <ul>
+      <li><a href="#modes">Modes</a></li>
+      <li><a href="#survival">Survival kit</a></li>
+      <li><a href="#motion">Motion</a></li>
+      <li><a href="#editing">Editing</a></li>
+      <li><a href="#grammar">Grammar</a></li>
+      <li><a href="#search">Search/replace</a></li>
+      <li><a href="#vimrc">.vimrc</a></li>
+    </ul>
+  </aside>
+</div>
+
+<script src="../assets/site.js"></script>
+</body>
+</html>

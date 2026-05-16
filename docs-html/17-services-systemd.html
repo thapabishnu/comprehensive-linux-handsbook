@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>17 · Services &amp; systemd — Mentor's Guide to Linux</title>
+<meta name="description" content="systemctl, unit files, journalctl — start, stop, debug services on modern Linux." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="brand">
+    <a href="index.html" style="border:none; color: inherit; display: contents;">
+      <span class="mark">/&gt;</span>
+      <span>The Mentor's Guide to Linux</span>
+    </a>
+    <span class="sub">NCS 205 handbook</span>
+  </div>
+  <div class="right">
+    <span class="crumbs"><a href="index.html" style="color: inherit; border: none;">HOME</a> / <strong>MODULE 17</strong></span>
+    <button class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+      <span class="icon">☼</span><span class="label">PAPER</span>
+    </button>
+    <button class="menu-btn" aria-label="Open table of contents" aria-expanded="false">MENU</button>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="sidebar" id="sidebar" aria-label="Module navigation"></aside>
+
+  <main class="main" id="main">
+    <article class="module">
+      <div class="meta-row">
+        <span><span class="label">MODULE</span>17</span>
+        <span><span class="label">MAPS TO</span>LABS 59–60</span>
+        <span><span class="label">TIME</span>~30 min</span>
+      </div>
+
+      <h1>Services and systemd</h1>
+      <p class="lede"><code>systemctl</code> and <code>journalctl</code> are how you find out why something won't start.</p>
+
+      <h2 id="why"><span class="secnum">§1</span>Why this matters</h2>
+      <p>On modern Linux, <strong>systemd</strong> is PID 1 — the parent of everything. It manages services, mounts, sockets, timers, and the boot sequence.</p>
+
+      <h2 id="mental-model"><span class="secnum">§2</span>Mental model</h2>
+      <p>systemd organizes everything into <strong>units</strong>. A unit is a small declarative file saying: "here's what I want running, here's how to start it."</p>
+
+      <table>
+        <thead><tr><th>Suffix</th><th>What it manages</th></tr></thead>
+        <tbody>
+          <tr><td><code>.service</code></td><td>A long-running process</td></tr>
+          <tr><td><code>.timer</code></td><td>Schedules another unit (modern cron)</td></tr>
+          <tr><td><code>.socket</code></td><td>A listening socket that activates a service on connect</td></tr>
+          <tr><td><code>.target</code></td><td>A group of units (like a runlevel)</td></tr>
+          <tr><td><code>.mount</code></td><td>A filesystem mount</td></tr>
+        </tbody>
+      </table>
+
+      <table>
+        <thead><tr><th>Path</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>/lib/systemd/system/</code></td><td>Vendor-shipped unit files</td></tr>
+          <tr><td><code>/etc/systemd/system/</code></td><td>Local admin overrides (highest priority)</td></tr>
+        </tbody>
+      </table>
+
+      <p>A unit can be <strong>enabled</strong> (start at boot) and/or <strong>active</strong> (running right now). They're independent.</p>
+
+      <h2 id="commands"><span class="secnum">§3</span>Core commands</h2>
+      <table>
+        <thead><tr><th>Command</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><code>systemctl status nginx</code></td><td>What's nginx's state right now?</td></tr>
+          <tr><td><code>systemctl start nginx</code></td><td>Start now</td></tr>
+          <tr><td><code>systemctl stop nginx</code></td><td>Stop</td></tr>
+          <tr><td><code>systemctl restart nginx</code></td><td>Stop + start</td></tr>
+          <tr><td><code>systemctl reload nginx</code></td><td>Reload config (if unit supports it)</td></tr>
+          <tr><td><code>systemctl enable nginx</code></td><td>Start automatically at boot</td></tr>
+          <tr><td><code>systemctl disable nginx</code></td><td>Don't start at boot</td></tr>
+          <tr><td><code>systemctl enable --now nginx</code></td><td>Enable and start in one step</td></tr>
+          <tr><td><code>systemctl is-active nginx</code></td><td>Just "active" or "inactive"</td></tr>
+          <tr><td><code>systemctl --failed</code></td><td>Anything in failed state</td></tr>
+          <tr><td><code>systemctl daemon-reload</code></td><td>Reload systemd's own knowledge after unit edits</td></tr>
+          <tr><td><code>systemctl cat nginx</code></td><td>Show unit file (vendor + overrides)</td></tr>
+          <tr><td><code>systemctl edit nginx</code></td><td>Create/edit override drop-in</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Logs side</h3>
+      <table>
+        <thead><tr><th>Command</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><code>journalctl -u nginx</code></td><td>All log entries for nginx</td></tr>
+          <tr><td><code>journalctl -u nginx -f</code></td><td>Follow (like <code>tail -f</code>)</td></tr>
+          <tr><td><code>journalctl -u nginx --since "10 min ago"</code></td><td>Time-bounded</td></tr>
+          <tr><td><code>journalctl -u nginx -b</code></td><td>Just from this boot</td></tr>
+          <tr><td><code>journalctl -p err</code></td><td>Only error-priority and above</td></tr>
+          <tr><td><code>journalctl -k</code></td><td>Kernel messages</td></tr>
+          <tr><td><code>journalctl -xe</code></td><td>Last entries with explanation, useful after a failure</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="anatomy"><span class="secnum">§4</span>Anatomy of a unit file</h2>
+<pre data-lang="ini"><code>[Unit]
+Description=My Web App
+After=network.target
+
+[Service]
+Type=simple
+User=myapp
+WorkingDirectory=/srv/myapp
+ExecStart=/srv/myapp/run.sh
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target</code></pre>
+
+      <ul>
+        <li><strong><code>[Unit]</code></strong> — description and ordering (<code>After=</code>, <code>Before=</code>, <code>Requires=</code>).</li>
+        <li><strong><code>[Service]</code></strong> — how to run it.</li>
+        <li><strong><code>[Install]</code></strong> — what <code>enable</code> should link it to.</li>
+      </ul>
+      <p><code>Type=simple</code> is most common. <code>Type=notify</code> is cleanest for production apps that can tell systemd "I'm ready."</p>
+
+      <h2 id="walkthrough"><span class="secnum">§5</span>Guided walkthrough</h2>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>systemctl status ssh
+<span class="tok-prompt">$ </span>systemctl is-active ssh
+<span class="tok-prompt">$ </span>systemctl is-enabled ssh
+<span class="tok-prompt">$ </span>systemctl list-units --type=service | head -10
+<span class="tok-prompt">$ </span>systemctl --failed
+
+<span class="tok-comment"># logs</span>
+<span class="tok-prompt">$ </span>journalctl -u ssh --since "1 hour ago"
+<span class="tok-prompt">$ </span>journalctl -u ssh -f &amp;
+<span class="tok-prompt">$ </span>sudo systemctl restart ssh
+<span class="tok-prompt">$ </span>fg
+<span class="tok-comment"># Ctrl+C to stop tail</span>
+
+<span class="tok-comment"># create your own service</span>
+<span class="tok-prompt">$ </span>sudo tee /etc/systemd/system/hello.service &gt; /dev/null &lt;&lt;'EOF'
+[Unit]
+Description=Hello world service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/bin/bash -c 'while true; do echo "hello $(date)"; sleep 30; done'
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+<span class="tok-prompt">$ </span>sudo systemctl daemon-reload
+<span class="tok-prompt">$ </span>sudo systemctl enable --now hello
+<span class="tok-prompt">$ </span>systemctl status hello
+<span class="tok-prompt">$ </span>journalctl -u hello -f
+
+<span class="tok-comment"># cleanup</span>
+<span class="tok-prompt">$ </span>sudo systemctl disable --now hello
+<span class="tok-prompt">$ </span>sudo rm /etc/systemd/system/hello.service
+<span class="tok-prompt">$ </span>sudo systemctl daemon-reload</code></pre>
+
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · <code>daemon-reload</code> required</span>
+        <p>After <strong>any</strong> change to a unit file. Forgetting this is the source of "I edited the unit but the change didn't take effect."</p>
+      </div>
+
+      <h3>Drop-in overrides</h3>
+      <p>Don't edit a vendor unit directly — your changes will be overwritten on package upgrade. Use <code>systemctl edit</code>:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo systemctl edit nginx</code></pre>
+      <p>This creates <code>/etc/systemd/system/nginx.service.d/override.conf</code> — a drop-in that adds to specific directives:</p>
+<pre data-lang="ini"><code>[Service]
+LimitNOFILE=65536</code></pre>
+      <p>Then <code>daemon-reload</code> and <code>restart</code>.</p>
+
+      <h2 id="gotchas"><span class="secnum">§6</span>Gotchas</h2>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · <code>reload</code> needs <code>ExecReload=</code></span>
+        <p>If the unit doesn't declare <code>ExecReload</code>, reload silently does nothing.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · <code>restart</code> kills in-flight connections</span>
+        <p>Reload is gentler when supported.</p>
+      </div>
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · journal persistence</span>
+        <p><code>journalctl</code> shows history only if <code>/var/log/journal/</code> exists. Set <code>Storage=persistent</code> in <code>/etc/systemd/journald.conf</code> and <code>mkdir /var/log/journal</code>.</p>
+      </div>
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · failed units stay failed</span>
+        <p><code>systemctl reset-failed nginx</code> clears the failed state.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · <code>After=</code> is not <code>Requires=</code></span>
+        <p><code>After=foo</code> means "start me after foo <em>if foo is started</em>." Use <code>Requires=foo</code> (hard) or <code>Wants=foo</code> (soft) for actual dependencies.</p>
+      </div>
+
+      <h2 id="drills"><span class="secnum">§7</span>On-the-spot exercises</h2>
+
+      <div class="exercise">
+        <p><span class="ex-id">E17.1</span>Is the SSH service running?</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>systemctl is-active ssh
+<span class="tok-prompt">$ </span>systemctl status ssh</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E17.2</span>List every service that's failed.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>systemctl --failed
+<span class="tok-prompt">$ </span>systemctl list-units --state=failed</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E17.3</span>Restart <code>cron</code> and confirm it's running.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo systemctl restart cron
+<span class="tok-prompt">$ </span>systemctl status cron</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E17.4</span>Disable <code>bluetooth</code> from starting at boot but leave it running.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo systemctl disable bluetooth
+<span class="tok-prompt">$ </span>systemctl is-enabled bluetooth   <span class="tok-comment"># → disabled</span>
+<span class="tok-prompt">$ </span>systemctl is-active bluetooth    <span class="tok-comment"># → still active</span></code></pre>
+          <p>Use <code>disable --now</code> to also stop immediately.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E17.5</span>Show SSH log entries from the last 10 minutes.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>journalctl -u ssh --since "10 min ago"</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E17.6</span>Tail-follow nginx's journal.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>journalctl -u nginx -f</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E17.7</span>Reload nginx config without restarting.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo nginx -t                     <span class="tok-comment"># always validate first</span>
+<span class="tok-prompt">$ </span>sudo systemctl reload nginx</code></pre>
+          <p>Skipping <code>nginx -t</code> has caused outages. Don't.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E17.8</span>Override nginx to increase file-descriptor limit to 65536.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo systemctl edit nginx</code></pre>
+<pre data-lang="ini"><code>[Service]
+LimitNOFILE=65536</code></pre>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo systemctl daemon-reload
+<span class="tok-prompt">$ </span>sudo systemctl restart nginx
+<span class="tok-prompt">$ </span>cat /proc/$(pgrep -f 'nginx: master' | head -1)/limits | grep "Max open files"</code></pre>
+        </div></details>
+      </div>
+
+      <h2 id="scenario"><span class="secnum">§8</span>Real-world sysadmin scenario</h2>
+      <p><strong>"The website is down."</strong></p>
+<pre data-lang="sh"><code><span class="tok-comment"># 1. Is the service running?</span>
+<span class="tok-prompt">$ </span>systemctl status nginx
+<span class="tok-comment"># Active: failed (Result: exit-code) since Fri 2026-05-16 14:32:01 UTC</span>
+
+<span class="tok-comment"># 2. Why did it fail?</span>
+<span class="tok-prompt">$ </span>journalctl -u nginx --since "5 min ago" -p err | tail -20
+<span class="tok-comment"># nginx: [emerg] unknown directive "wokrer_processes" in /etc/nginx/nginx.conf:1</span>
+
+<span class="tok-comment"># 3. Fix the typo</span>
+<span class="tok-prompt">$ </span>sudo vi /etc/nginx/nginx.conf
+
+<span class="tok-comment"># 4. Validate before reload</span>
+<span class="tok-prompt">$ </span>sudo nginx -t
+<span class="tok-comment"># nginx: configuration file /etc/nginx/nginx.conf test is successful</span>
+
+<span class="tok-comment"># 5. Start it back up</span>
+<span class="tok-prompt">$ </span>sudo systemctl start nginx
+<span class="tok-prompt">$ </span>systemctl is-active nginx
+<span class="tok-comment"># active</span></code></pre>
+
+      <p><strong>Always</strong> <code>systemctl status</code> and <code>journalctl</code> <em>before</em> you start randomly restarting things.</p>
+
+      <h2 id="recap"><span class="secnum">§9</span>What to remember</h2>
+      <ul>
+        <li>systemd is PID 1. Units describe what should run.</li>
+        <li><code>systemctl status / start / stop / restart / reload / enable / disable</code>.</li>
+        <li><code>journalctl -u UNIT</code> for logs; <code>-f</code> to follow.</li>
+        <li>After unit-file changes: <code>systemctl daemon-reload</code>.</li>
+        <li>Use <code>systemctl edit</code> for overrides; never edit vendor units directly.</li>
+        <li><code>reload</code> over <code>restart</code> when supported. Validate configs first.</li>
+      </ul>
+
+      <a class="next-card" href="18-networking.html">
+        <span class="label">NEXT · MODULE 18</span>
+        <span class="title">Networking</span>
+        <span class="desc">ip, ss, dig, curl — diagnose from the shell.</span>
+      </a>
+    </article>
+
+    <footer class="colophon">
+      <p>NCS 205 handbook · module 17 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
+    </footer>
+  </main>
+
+  <aside class="toc" aria-label="On this page">
+    <div class="toc-title">On this page</div>
+    <ul>
+      <li><a href="#why">§1 Why this matters</a></li>
+      <li><a href="#mental-model">§2 Mental model</a></li>
+      <li><a href="#commands">§3 Core commands</a></li>
+      <li><a href="#anatomy">§4 Unit file anatomy</a></li>
+      <li><a href="#walkthrough">§5 Walkthrough</a></li>
+      <li><a href="#gotchas">§6 Gotchas</a></li>
+      <li><a href="#drills">§7 Exercises</a></li>
+      <li><a href="#scenario">§8 Scenario</a></li>
+      <li><a href="#recap">§9 What to remember</a></li>
+    </ul>
+  </aside>
+</div>
+
+<script src="assets/site.js"></script>
+</body>
+</html>
