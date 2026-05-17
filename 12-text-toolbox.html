@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>12 · Text toolbox — Mentor's Guide to Linux</title>
+<meta name="description" content="cut, sort, uniq, tr, paste, comm, diff — the classic composable filters." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="brand">
+    <a href="index.html" style="border:none; color: inherit; display: contents;">
+      <span class="mark">/&gt;</span>
+      <span>The Mentor's Guide to Linux</span>
+    </a>
+    <span class="sub">NCS 205 handbook</span>
+  </div>
+  <div class="right">
+    <span class="crumbs"><a href="index.html" style="color: inherit; border: none;">HOME</a> / <strong>MODULE 12</strong></span>
+    <button class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+      <span class="icon">☼</span><span class="label">PAPER</span>
+    </button>
+    <button class="menu-btn" aria-label="Open table of contents" aria-expanded="false">MENU</button>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="sidebar" id="sidebar" aria-label="Module navigation"></aside>
+
+  <main class="main" id="main">
+    <article class="module">
+      <div class="meta-row">
+        <span><span class="label">MODULE</span>12</span>
+        <span><span class="label">MAPS TO</span>LABS 31–32</span>
+        <span><span class="label">TIME</span>~30 min</span>
+      </div>
+
+      <h1>The text-processing toolbox</h1>
+      <p class="lede">Stacked into pipelines, these tools replace Excel for many real sysadmin tasks.</p>
+
+      <h2 id="why"><span class="secnum">§1</span>Why this matters</h2>
+      <p>Once you can pipe and filter, the missing piece is <em>transformation</em>. The classic Unix tools — <code>cut</code>, <code>sort</code>, <code>uniq</code>, <code>tr</code>, <code>paste</code>, <code>comm</code>, <code>diff</code> — each do <em>one</em> thing well. Top IPs from a log. Unique users from a CSV. Diff between two configs. All become one-liners.</p>
+
+      <h2 id="mental-model"><span class="secnum">§2</span>Mental model</h2>
+      <p>Each tool transforms a stream. Visualize a pipeline as a small assembly line:</p>
+<pre data-lang="diagram" data-nocopy="true"><code>   cat data.csv | cut -d, -f1 | sort | uniq -c | sort -rn | head -5
+   └ source      └ extract     └ group  └ count  └ rank      └ top 5</code></pre>
+      <p>Six stages, each doing exactly one job. Build the pipeline incrementally — run after each <code>|</code> to inspect intermediate results. That's how senior people <em>write</em> pipelines: stage by stage.</p>
+
+      <h2 id="commands"><span class="secnum">§3</span>Core commands</h2>
+
+      <h3><code>cut</code> — extract columns or character ranges</h3>
+      <table>
+        <thead><tr><th>Form</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><code>cut -d',' -f1 file</code></td><td>Field 1, delimiter = comma</td></tr>
+          <tr><td><code>cut -d':' -f1,3 /etc/passwd</code></td><td>Username + UID</td></tr>
+          <tr><td><code>cut -c1-10 file</code></td><td>Characters 1 through 10</td></tr>
+          <tr><td><code>cut -f2 file</code></td><td>Tab-delimited by default — field 2</td></tr>
+        </tbody>
+      </table>
+
+      <h3><code>sort</code> — sort lines</h3>
+      <table>
+        <thead><tr><th>Form</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><code>sort file</code></td><td>Lexical ascending</td></tr>
+          <tr><td><code>sort -r file</code></td><td>Reverse</td></tr>
+          <tr><td><code>sort -n file</code></td><td>Numeric</td></tr>
+          <tr><td><code>sort -h file</code></td><td>Human-numeric (1K, 2M, 5G…)</td></tr>
+          <tr><td><code>sort -u file</code></td><td>Unique (no dupes)</td></tr>
+          <tr><td><code>sort -k2 file</code></td><td>Sort by field 2</td></tr>
+          <tr><td><code>sort -t',' -k3,3n file</code></td><td>Comma-separated, key field 3, numeric</td></tr>
+        </tbody>
+      </table>
+
+      <h3><code>uniq</code> — collapse adjacent duplicates</h3>
+      <table>
+        <thead><tr><th>Form</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><code>uniq file</code></td><td>Adjacent dupes collapsed</td></tr>
+          <tr><td><code>uniq -c</code></td><td>With counts</td></tr>
+          <tr><td><code>uniq -d</code></td><td>Only show duplicates</td></tr>
+          <tr><td><code>uniq -u</code></td><td>Only show non-duplicated lines</td></tr>
+        </tbody>
+      </table>
+      <p><code>uniq</code> only sees <em>adjacent</em> duplicates. <strong>Always pipe through <code>sort</code> first.</strong> <code>sort | uniq -c</code> is the most-used pair in this whole guide.</p>
+
+      <h3><code>tr</code> — translate characters</h3>
+      <table>
+        <thead><tr><th>Form</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><code>tr 'a-z' 'A-Z'</code></td><td>Lowercase → uppercase</td></tr>
+          <tr><td><code>tr -d '\r'</code></td><td>Delete carriage returns</td></tr>
+          <tr><td><code>tr -s ' '</code></td><td>Squeeze repeats — many spaces → one</td></tr>
+          <tr><td><code>tr ',' '\n'</code></td><td>Replace commas with newlines</td></tr>
+        </tbody>
+      </table>
+      <p><code>tr</code> reads stdin and writes stdout. It doesn't take a filename — use <code>tr ... &lt; file</code>.</p>
+
+      <h3><code>paste</code> — join lines side-by-side</h3>
+      <table>
+        <thead><tr><th>Form</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><code>paste a b</code></td><td>tab-joined columns from a and b</td></tr>
+          <tr><td><code>paste -d',' a b</code></td><td>Comma-joined</td></tr>
+          <tr><td><code>paste -s file</code></td><td>Serial — fold all lines onto one</td></tr>
+        </tbody>
+      </table>
+
+      <h3><code>comm</code> — compare two sorted files</h3>
+      <table>
+        <thead><tr><th>Form</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><code>comm a b</code></td><td>Three columns: only-in-a, only-in-b, both</td></tr>
+          <tr><td><code>comm -12 a b</code></td><td>Only show "both" (intersection)</td></tr>
+          <tr><td><code>comm -23 a b</code></td><td>Only show "in a but not b"</td></tr>
+        </tbody>
+      </table>
+      <p>Both inputs <em>must be sorted</em>. Otherwise the output is garbage.</p>
+
+      <h3><code>diff</code> — show what's different</h3>
+      <table>
+        <thead><tr><th>Form</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><code>diff a b</code></td><td>Default change-list output</td></tr>
+          <tr><td><code>diff -u a b</code></td><td>Unified format (what <code>git diff</code> uses)</td></tr>
+          <tr><td><code>diff -y a b</code></td><td>Side-by-side</td></tr>
+          <tr><td><code>diff -r dir1 dir2</code></td><td>Recursive directory diff</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Honorable mentions</h3>
+      <ul>
+        <li><code>nl</code> — number lines.</li>
+        <li><code>rev</code> — reverse each line character-by-character.</li>
+        <li><code>cat -n</code> — number every line.</li>
+        <li><code>column -t</code> — pretty-print whitespace-separated columns.</li>
+        <li><code>tac</code> — <code>cat</code> backwards (last line first).</li>
+      </ul>
+
+      <h2 id="walkthrough"><span class="secnum">§4</span>Guided walkthrough</h2>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cd ~/ncs205-sandbox/text/
+
+<span class="tok-comment"># cut — extract the salary column from the CSV</span>
+<span class="tok-prompt">$ </span>cut -d',' -f4 employees.csv
+
+<span class="tok-comment"># sort the salaries numerically, descending</span>
+<span class="tok-prompt">$ </span>cut -d',' -f4 employees.csv | tail -n +2 | sort -rn
+
+<span class="tok-comment"># top 3 highest-paid</span>
+<span class="tok-prompt">$ </span>cut -d',' -f4 employees.csv | tail -n +2 | sort -rn | head -3
+
+<span class="tok-comment"># count unique departments</span>
+<span class="tok-prompt">$ </span>cut -d',' -f3 employees.csv | tail -n +2 | sort | uniq -c | sort -rn
+
+<span class="tok-comment"># top 3 most active IPs (classic pipeline)</span>
+<span class="tok-prompt">$ </span>awk '{print $1}' access.log | sort | uniq -c | sort -rn | head -3
+
+<span class="tok-comment"># tr — uppercase a file</span>
+<span class="tok-prompt">$ </span>tr 'a-z' 'A-Z' &lt; lorem.txt
+
+<span class="tok-comment"># strip Windows line endings</span>
+<span class="tok-prompt">$ </span>tr -d '\r' &lt; broken.txt &gt; fixed.txt
+
+<span class="tok-comment"># paste — line up two files as columns</span>
+<span class="tok-prompt">$ </span>seq 1 5 &gt; nums.txt
+<span class="tok-prompt">$ </span>seq 11 15 &gt; more.txt
+<span class="tok-prompt">$ </span>paste nums.txt more.txt
+
+<span class="tok-comment"># comm — set operations on sorted files</span>
+<span class="tok-prompt">$ </span>sort &lt; &lt;(seq 1 10) &gt; a.txt
+<span class="tok-prompt">$ </span>sort &lt; &lt;(seq 5 15) &gt; b.txt
+<span class="tok-prompt">$ </span>comm -12 a.txt b.txt        <span class="tok-comment"># intersection: 5..10</span>
+<span class="tok-prompt">$ </span>comm -23 a.txt b.txt        <span class="tok-comment"># only in a:    1..4</span>
+
+<span class="tok-comment"># diff — what changed</span>
+<span class="tok-prompt">$ </span>echo "foo
+bar
+baz" &gt; v1.txt
+<span class="tok-prompt">$ </span>echo "foo
+bar
+quux" &gt; v2.txt
+<span class="tok-prompt">$ </span>diff -u v1.txt v2.txt</code></pre>
+
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor habit · build pipelines stage by stage</span>
+        <p>Copy and run it stage-by-stage. Stop after every <code>|</code>. See what's flowing. The mental model of <em>streams of lines</em> gets sharper with that habit.</p>
+      </div>
+
+      <h2 id="gotchas"><span class="secnum">§5</span>Gotchas</h2>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · <code>uniq</code> only collapses adjacent lines</span>
+        <p>Sort first or you'll get duplicates anyway.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · <code>sort</code> is locale-dependent</span>
+        <p>Capital letters may sort before or after lowercase depending on <code>LC_ALL</code>. Set <code>LC_ALL=C sort ...</code> for predictable byte-level sorting in scripts.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · CSVs with quoted fields break <code>cut</code></span>
+        <p>A field like <code>"Smith, John"</code> contains the delimiter. For real CSV processing, use <code>awk</code> or proper tools like <code>csvkit</code> / <code>xsv</code>.</p>
+      </div>
+      <div class="callout callout-tip">
+        <span class="callout-label">Tip · <code>tr</code> doesn't take a filename</span>
+        <p>Always <code>tr ... &lt; file</code> (or pipe into it).</p>
+      </div>
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · <code>diff</code> exit code</span>
+        <p><code>diff</code> exits 1 when files differ. Useful: <code>diff a b &gt; /dev/null &amp;&amp; echo same || echo different</code>.</p>
+      </div>
+
+      <h2 id="drills"><span class="secnum">§6</span>On-the-spot exercises</h2>
+
+      <div class="exercise">
+        <p><span class="ex-id">E12.1</span>From <code>~/ncs205-sandbox/text/employees.csv</code>, print just the names column.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cut -d',' -f2 ~/ncs205-sandbox/text/employees.csv</code></pre>
+          <p>To skip the header: pipe through <code>tail -n +2</code>.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E12.2</span>List all unique departments in the CSV.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cut -d',' -f3 ~/ncs205-sandbox/text/employees.csv | tail -n +2 | sort -u</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E12.3</span>Show the count of employees per department.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cut -d',' -f3 ~/ncs205-sandbox/text/employees.csv | tail -n +2 | sort | uniq -c | sort -rn</code></pre>
+          <p><code>sort | uniq -c | sort -rn</code> — the most useful pipeline triple in operations work.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E12.4</span>Top 5 IP addresses in <code>access.log</code> by request count.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cut -d' ' -f1 ~/ncs205-sandbox/text/access.log | sort | uniq -c | sort -rn | head -5</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E12.5</span>Uppercase the contents of <code>lorem.txt</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>tr 'a-z' 'A-Z' &lt; ~/ncs205-sandbox/text/lorem.txt</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E12.6</span>Replace every space in <code>lorem.txt</code> with a newline, then count distinct words.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>tr ' ' '\n' &lt; ~/ncs205-sandbox/text/lorem.txt | sort -u | wc -l</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E12.7</span>Compare <code>/etc/services</code> to a sorted version of itself.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>diff /etc/services &lt;(sort /etc/services)</code></pre>
+          <p>The <code>&lt;(...)</code> is <em>process substitution</em> — runs <code>sort</code> and feeds its output to <code>diff</code> as if it were a file.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E12.8</span>Two sorted lists <code>users-tuesday.txt</code> and <code>users-wednesday.txt</code>. Find who logged in <em>both</em> days.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>comm -12 users-tuesday.txt users-wednesday.txt</code></pre>
+          <p><code>-12</code> suppresses columns 1 and 2, leaving the "both" column.</p>
+        </div></details>
+      </div>
+
+      <h2 id="scenario"><span class="secnum">§7</span>Real-world sysadmin scenario</h2>
+      <p><strong>Audit:</strong> "Make a CSV of every user account on this box and their primary group."</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cut -d':' -f1,4 /etc/passwd \
+  | sort \
+  | tr ':' ',' \
+  &gt; /tmp/user-group.csv</code></pre>
+      <p>Pipe it through <code>column -t -s,</code> to display nicely:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cat /tmp/user-group.csv | column -t -s,</code></pre>
+
+      <p>A more involved one: <strong>"Which IPs accessed the API more than 5 times?"</strong></p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cut -d' ' -f1 /var/log/nginx/access.log \
+  | sort | uniq -c \
+  | awk '$1 &gt; 5 {print $2 " (" $1 ")"}'</code></pre>
+      <p>The toolbox tools chain into solutions that look intimidating on a slide but are <em>trivial</em> to build incrementally.</p>
+
+      <h2 id="recap"><span class="secnum">§8</span>What to remember</h2>
+      <ul>
+        <li>One tool, one job. The pipeline is where the power is.</li>
+        <li><code>sort | uniq -c | sort -rn</code> — your single most useful triple.</li>
+        <li><code>cut -d X -fN</code> for delimited data; <code>cut -cN-M</code> for fixed columns.</li>
+        <li><code>tr</code> for character-level translation; takes only stdin.</li>
+        <li><code>comm</code> for set ops on sorted files; <code>diff</code> for changes.</li>
+        <li>Build pipelines stage by stage. Watch what flows.</li>
+      </ul>
+
+      <a class="next-card" href="13-sed-and-awk.html">
+        <span class="label">NEXT · MODULE 13</span>
+        <span class="title">sed &amp; awk</span>
+        <span class="desc">The two oldest, most powerful text-processing tools.</span>
+      </a>
+    </article>
+
+    <footer class="colophon">
+      <p>NCS 205 handbook · module 12 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
+    </footer>
+  </main>
+
+  <aside class="toc" aria-label="On this page">
+    <div class="toc-title">On this page</div>
+    <ul>
+      <li><a href="#why">§1 Why this matters</a></li>
+      <li><a href="#mental-model">§2 Mental model</a></li>
+      <li><a href="#commands">§3 Core commands</a></li>
+      <li><a href="#walkthrough">§4 Walkthrough</a></li>
+      <li><a href="#gotchas">§5 Gotchas</a></li>
+      <li><a href="#drills">§6 Exercises</a></li>
+      <li><a href="#scenario">§7 Scenario</a></li>
+      <li><a href="#recap">§8 What to remember</a></li>
+    </ul>
+  </aside>
+</div>
+
+<script src="assets/site.js"></script>
+</body>
+</html>

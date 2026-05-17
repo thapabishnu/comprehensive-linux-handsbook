@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>20 · git for sysadmins — Mentor's Guide to Linux</title>
+<meta name="description" content="Git isn't only for developers. Version-control configs, scripts, dotfiles — every change tracked, every reason preserved." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="brand">
+    <a href="index.html" style="border:none; color: inherit; display: contents;">
+      <span class="mark">/&gt;</span>
+      <span>The Mentor's Guide to Linux</span>
+    </a>
+    <span class="sub">NCS 205 handbook</span>
+  </div>
+  <div class="right">
+    <span class="crumbs"><a href="index.html" style="color: inherit; border: none;">HOME</a> / <strong>MODULE 20</strong></span>
+    <button class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+      <span class="icon">☼</span><span class="label">PAPER</span>
+    </button>
+    <button class="menu-btn" aria-label="Open table of contents" aria-expanded="false">MENU</button>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="sidebar" id="sidebar" aria-label="Module navigation"></aside>
+
+  <main class="main" id="main">
+    <article class="module">
+      <div class="meta-row">
+        <span><span class="label">MODULE</span>20</span>
+        <span><span class="label">MAPS TO</span>LAB 36</span>
+        <span><span class="label">TIME</span>~30 min</span>
+      </div>
+
+      <h1>git for sysadmins</h1>
+      <p class="lede">Every change you make to a config, every script you write, every dotfile you tweak — should be versioned.</p>
+
+      <h2 id="why"><span class="secnum">§1</span>Why this matters</h2>
+      <p>When a config worked yesterday and doesn't today, <code>git log</code> and <code>git diff</code> tell you exactly what changed and why.</p>
+
+      <h2 id="mental-model"><span class="secnum">§2</span>Mental model</h2>
+      <p>A <strong>repository</strong> stores snapshots of a directory's state. Each snapshot is a <strong>commit</strong> with a SHA, a parent pointer, and a message.</p>
+      <p>A <strong>branch</strong> is a moveable pointer to a commit. <code>HEAD</code> points to whichever commit/branch you're currently "on."</p>
+<pre data-lang="diagram" data-nocopy="true"><code>   commit C ──► commit B ──► commit A (root)
+       ▲
+     main, HEAD</code></pre>
+
+      <p>Three states your files can be in:</p>
+      <table>
+        <thead><tr><th>State</th><th>Means</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Working directory</strong></td><td>Files you can see and edit</td></tr>
+          <tr><td><strong>Staging area</strong> (index)</td><td>Changes marked for the next commit</td></tr>
+          <tr><td><strong>Committed</strong></td><td>Snapshot saved permanently</td></tr>
+        </tbody>
+      </table>
+      <p><code>git add</code> moves changes from working → staging. <code>git commit</code> moves staging → committed.</p>
+
+      <h2 id="commands"><span class="secnum">§3</span>Core commands</h2>
+
+      <h3>One-time setup</h3>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>git config --global user.name  "Your Name"
+<span class="tok-prompt">$ </span>git config --global user.email "you@example.com"
+<span class="tok-prompt">$ </span>git config --global init.defaultBranch main
+<span class="tok-prompt">$ </span>git config --global core.editor vim</code></pre>
+
+      <h3>Daily flow</h3>
+      <table>
+        <thead><tr><th>Command</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><code>git init</code></td><td>Make current dir a repo</td></tr>
+          <tr><td><code>git clone URL</code></td><td>Copy a remote repo</td></tr>
+          <tr><td><code>git status</code></td><td>What's changed; what's staged</td></tr>
+          <tr><td><code>git diff</code></td><td>Unstaged changes</td></tr>
+          <tr><td><code>git diff --cached</code></td><td>Staged changes</td></tr>
+          <tr><td><code>git add file</code></td><td>Stage a file</td></tr>
+          <tr><td><code>git add -p</code></td><td>Interactive — stage parts of a file</td></tr>
+          <tr><td><code>git commit -m "msg"</code></td><td>Commit staged changes</td></tr>
+          <tr><td><code>git log</code></td><td>History</td></tr>
+          <tr><td><code>git log --oneline --graph</code></td><td>Compact graph</td></tr>
+          <tr><td><code>git log file</code></td><td>History of one file</td></tr>
+          <tr><td><code>git show &lt;hash&gt;</code></td><td>Full diff of one commit</td></tr>
+          <tr><td><code>git restore file</code></td><td>Undo unstaged changes</td></tr>
+          <tr><td><code>git restore --staged file</code></td><td>Unstage</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Branching and remotes</h3>
+      <table>
+        <thead><tr><th>Command</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><code>git branch</code></td><td>List local branches</td></tr>
+          <tr><td><code>git switch -c newbr</code></td><td>Create + switch</td></tr>
+          <tr><td><code>git merge other</code></td><td>Merge <code>other</code> into current</td></tr>
+          <tr><td><code>git remote -v</code></td><td>List remotes</td></tr>
+          <tr><td><code>git remote add origin URL</code></td><td>Add remote</td></tr>
+          <tr><td><code>git fetch</code></td><td>Get remote changes (don't merge)</td></tr>
+          <tr><td><code>git pull</code></td><td>Fetch + merge</td></tr>
+          <tr><td><code>git push</code></td><td>Send local commits to remote</td></tr>
+          <tr><td><code>git push -u origin main</code></td><td>First push of a new branch</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Inspecting and undoing</h3>
+      <table>
+        <thead><tr><th>Command</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><code>git log -p file</code></td><td>History + diffs of one file</td></tr>
+          <tr><td><code>git blame file</code></td><td>Who/when last changed each line</td></tr>
+          <tr><td><code>git reflog</code></td><td>Every HEAD move — your safety net</td></tr>
+          <tr><td><code>git revert &lt;hash&gt;</code></td><td>Create a new commit that undoes a previous one</td></tr>
+          <tr><td><code>git reset HEAD~1</code></td><td>Undo last commit, keep changes</td></tr>
+          <tr><td><code>git reset --hard HEAD~1</code></td><td>Undo last commit, <strong>discard changes</strong></td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="walkthrough"><span class="secnum">§4</span>Guided walkthrough</h2>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>mkdir ~/configs &amp;&amp; cd ~/configs
+<span class="tok-prompt">$ </span>git init
+<span class="tok-prompt">$ </span>echo "*.swp" &gt; .gitignore
+<span class="tok-prompt">$ </span>echo "alias ll='ls -la'" &gt; bashrc-snippets.sh
+
+<span class="tok-prompt">$ </span>git status
+<span class="tok-prompt">$ </span>git add .gitignore bashrc-snippets.sh
+<span class="tok-prompt">$ </span>git status
+<span class="tok-prompt">$ </span>git commit -m "initial: gitignore + first bash alias"
+
+<span class="tok-comment"># make a change</span>
+<span class="tok-prompt">$ </span>echo "alias ..='cd ..'" &gt;&gt; bashrc-snippets.sh
+<span class="tok-prompt">$ </span>git diff
+<span class="tok-prompt">$ </span>git add bashrc-snippets.sh
+<span class="tok-prompt">$ </span>git commit -m "alias: add .. for cd .."
+
+<span class="tok-prompt">$ </span>git log --oneline
+<span class="tok-prompt">$ </span>git show HEAD
+<span class="tok-prompt">$ </span>git blame bashrc-snippets.sh</code></pre>
+
+      <h3>Pushing to GitHub</h3>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>git remote add origin git@github.com:yourname/configs.git
+<span class="tok-prompt">$ </span>git push -u origin main</code></pre>
+
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor habit · small, focused commits</span>
+        <p>One concern per commit. <code>git add -p</code> lets you split a file's changes into multiple commits — invaluable for readable history.</p>
+      </div>
+
+      <h2 id="gotchas"><span class="secnum">§5</span>Gotchas</h2>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · don't commit secrets</span>
+        <p>Once pushed, they're public forever — history is preserved. Add to <code>.gitignore</code> <em>before</em> the first commit.</p>
+      </div>
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · <code>git pull</code> can surprise</span>
+        <p><code>git pull</code> = <code>fetch + merge</code> and can produce surprise merge commits. Some prefer <code>git pull --rebase</code> for linear history.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · destructive commands</span>
+        <p><code>git reset --hard</code> and <code>git push --force</code> can vanish coworkers' work. Use <code>--force-with-lease</code> and avoid force-pushing shared branches.</p>
+      </div>
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · detached HEAD</span>
+        <p>Happens when you <code>checkout</code> a commit hash. Any commits there are "lost" unless you create a branch: <code>git switch -c rescue-branch</code>.</p>
+      </div>
+      <div class="callout callout-tip">
+        <span class="callout-label">Tip · commit messages are documentation</span>
+        <p>"Fix bug" is useless. "Fix off-by-one in date parsing when timezone is DST-ambiguous" is gold a year later.</p>
+      </div>
+
+      <h2 id="drills"><span class="secnum">§6</span>On-the-spot exercises</h2>
+
+      <div class="exercise">
+        <p><span class="ex-id">E20.1</span>Initialize a git repo in <code>~/lab20</code> and commit a hello-world script.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>mkdir -p ~/lab20 &amp;&amp; cd ~/lab20
+<span class="tok-prompt">$ </span>git init
+<span class="tok-prompt">$ </span>echo '#!/bin/bash' &gt; hello.sh
+<span class="tok-prompt">$ </span>echo 'echo hello' &gt;&gt; hello.sh
+<span class="tok-prompt">$ </span>chmod +x hello.sh
+<span class="tok-prompt">$ </span>git add hello.sh
+<span class="tok-prompt">$ </span>git commit -m "add hello.sh"</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E20.2</span>Show what's in the latest commit.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>git show HEAD</code></pre>
+          <p><code>HEAD~1</code> = one commit ago, etc.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E20.3</span>Make a change. Use <code>git diff</code> to see it.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>echo 'date' &gt;&gt; hello.sh
+<span class="tok-prompt">$ </span>git diff</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E20.4</span>Stage the change. Use <code>git diff --cached</code> to see it.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>git add hello.sh
+<span class="tok-prompt">$ </span>git diff             <span class="tok-comment"># nothing</span>
+<span class="tok-prompt">$ </span>git diff --cached    <span class="tok-comment"># the staged change</span></code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E20.5</span>Unstage and discard the change.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>git restore --staged hello.sh
+<span class="tok-prompt">$ </span>git restore hello.sh</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E20.6</span>Show history of <code>hello.sh</code> with full diffs.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>git log -p hello.sh</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E20.7</span>Add a remote <code>origin</code>, then list remotes.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>git remote add origin git@github.com:you/configs.git
+<span class="tok-prompt">$ </span>git remote -v</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E20.8</span>Untrack a file you committed by mistake (keep it in working dir).</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>echo "passwords.txt" &gt;&gt; .gitignore
+<span class="tok-prompt">$ </span>git rm --cached passwords.txt
+<span class="tok-prompt">$ </span>git commit -m "untrack passwords.txt"</code></pre>
+          <p>File is <em>still</em> in earlier history. For genuine secrets, rotate the secret (faster than rewriting history).</p>
+        </div></details>
+      </div>
+
+      <h2 id="scenario"><span class="secnum">§7</span>Real-world sysadmin scenario</h2>
+      <p><strong>Versioning <code>/etc</code> on a server.</strong> Turn <code>/etc</code> into a git repo:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cd /etc
+<span class="tok-prompt">$ </span>sudo git init
+<span class="tok-prompt">$ </span>sudo bash -c 'cat &gt; .gitignore' &lt;&lt;'EOF'
+shadow
+shadow-
+gshadow
+gshadow-
+private/
+ssh/ssh_host_*_key
+EOF
+
+<span class="tok-prompt">$ </span>sudo git add .
+<span class="tok-prompt">$ </span>sudo git commit -m "baseline: $(hostname) $(date -Iseconds)"</code></pre>
+
+      <p>Whenever you edit a config:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo vi /etc/nginx/nginx.conf
+<span class="tok-prompt">$ </span>sudo git -C /etc diff
+<span class="tok-prompt">$ </span>sudo git -C /etc add nginx/nginx.conf
+<span class="tok-prompt">$ </span>sudo git -C /etc commit -m "nginx: tune worker_connections to 4096"</code></pre>
+
+      <p>Two months later, the junior asks "why is <code>worker_connections</code> 4096?" You: <code>sudo git -C /etc log -p nginx/nginx.conf</code> — full history with reasons.</p>
+      <p>Real sysadmins use <code>etckeeper</code>, a tool that does this with extras (auto-commits on package install).</p>
+
+      <h2 id="recap"><span class="secnum">§8</span>What to remember</h2>
+      <ul>
+        <li>Repos store snapshots = commits. Branches are pointers.</li>
+        <li>Working dir → staging → committed. <code>add</code> then <code>commit</code>.</li>
+        <li>Write good commit messages.</li>
+        <li><code>git status</code> and <code>git diff</code> are your two most-used commands.</li>
+        <li><code>git log -p file</code> for the <em>why</em>; <code>git blame file</code> for the <em>who</em>.</li>
+        <li>Never commit secrets. <code>.gitignore</code> <em>before</em> <code>git add</code>.</li>
+      </ul>
+
+      <a class="next-card" href="21-cron-and-scheduling.html">
+        <span class="label">NEXT · MODULE 21</span>
+        <span class="title">cron &amp; scheduling</span>
+        <span class="desc">Schedule recurring jobs.</span>
+      </a>
+    </article>
+
+    <footer class="colophon">
+      <p>NCS 205 handbook · module 20 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
+    </footer>
+  </main>
+
+  <aside class="toc" aria-label="On this page">
+    <div class="toc-title">On this page</div>
+    <ul>
+      <li><a href="#why">§1 Why this matters</a></li>
+      <li><a href="#mental-model">§2 Mental model</a></li>
+      <li><a href="#commands">§3 Core commands</a></li>
+      <li><a href="#walkthrough">§4 Walkthrough</a></li>
+      <li><a href="#gotchas">§5 Gotchas</a></li>
+      <li><a href="#drills">§6 Exercises</a></li>
+      <li><a href="#scenario">§7 Scenario</a></li>
+      <li><a href="#recap">§8 What to remember</a></li>
+    </ul>
+  </aside>
+</div>
+
+<script src="assets/site.js"></script>
+</body>
+</html>

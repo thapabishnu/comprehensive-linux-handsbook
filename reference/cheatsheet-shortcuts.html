@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Cheatsheet · Keyboard shortcuts — Mentor's Guide to Linux</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="brand">
+    <a href="../index.html" style="border:none; color: inherit; display: contents;">
+      <span class="mark">/&gt;</span>
+      <span>The Mentor's Guide to Linux</span>
+    </a>
+    <span class="sub">NCS 205 handbook</span>
+  </div>
+  <div class="right">
+    <span class="crumbs"><a href="../index.html" style="color: inherit; border: none;">HOME</a> / REFERENCE / <strong>SHORTCUTS</strong></span>
+    <button class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+      <span class="icon">☼</span><span class="label">PAPER</span>
+    </button>
+    <button class="menu-btn" aria-label="Open table of contents" aria-expanded="false">MENU</button>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="sidebar" id="sidebar" aria-label="Module navigation"></aside>
+
+  <main class="main" id="main">
+    <article class="module">
+      <h1>Keyboard cheatsheet</h1>
+      <p class="lede">The shortcuts that buy you the most time.</p>
+
+      <h2 id="cli">Command-line editing</h2>
+      <table>
+        <thead><tr><th>Keys</th><th>What</th></tr></thead>
+        <tbody>
+          <tr><td><kbd>Tab</kbd></td><td>Autocomplete; double-Tab to see candidates</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>R</kbd></td><td>Reverse-search history (press again to cycle)</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>A</kbd> / <kbd>Ctrl</kbd>+<kbd>E</kbd></td><td>Beginning / end of line</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>U</kbd> / <kbd>Ctrl</kbd>+<kbd>K</kbd></td><td>Kill before / after cursor</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>W</kbd></td><td>Kill the word before cursor</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>Y</kbd></td><td>Paste (yank) what you killed</td></tr>
+          <tr><td><kbd>Alt</kbd>+<kbd>F</kbd> / <kbd>Alt</kbd>+<kbd>B</kbd></td><td>Forward / back one word</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>L</kbd></td><td>Clear screen</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>C</kbd></td><td>Cancel current line</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>D</kbd></td><td>EOF / logout when line is empty</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd></td><td>Suspend foreground process; resume with <code>fg</code></td></tr>
+          <tr><td><kbd>↑</kbd> / <kbd>↓</kbd></td><td>Walk history</td></tr>
+          <tr><td><code>!!</code></td><td>Re-run previous command</td></tr>
+          <tr><td><code>!N</code></td><td>Re-run history entry N</td></tr>
+          <tr><td><code>^old^new</code></td><td>Re-run previous with substitution</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="pagers">less / man (pagers)</h2>
+      <table>
+        <thead><tr><th>Keys</th><th>What</th></tr></thead>
+        <tbody>
+          <tr><td><kbd>Space</kbd> / <kbd>f</kbd></td><td>Page down</td></tr>
+          <tr><td><kbd>b</kbd></td><td>Page up</td></tr>
+          <tr><td><kbd>g</kbd> / <kbd>G</kbd></td><td>Top / bottom</td></tr>
+          <tr><td><kbd>/</kbd>pattern</td><td>Search forward — <kbd>n</kbd> next, <kbd>N</kbd> previous</td></tr>
+          <tr><td><kbd>?</kbd>pattern</td><td>Search backward</td></tr>
+          <tr><td><kbd>&amp;</kbd>pattern</td><td>Show only matching lines</td></tr>
+          <tr><td><kbd>q</kbd></td><td>Quit</td></tr>
+          <tr><td><kbd>F</kbd></td><td>Live-tail mode (<kbd>Ctrl</kbd>+<kbd>C</kbd> exits)</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="tmux">tmux</h2>
+      <table>
+        <thead><tr><th>Keys</th><th>What</th></tr></thead>
+        <tbody>
+          <tr><td><code>tmux new -s NAME</code></td><td>Start named session</td></tr>
+          <tr><td><code>tmux attach -t NAME</code></td><td>Re-attach</td></tr>
+          <tr><td><code>tmux ls</code></td><td>List sessions</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>b</kbd> <kbd>d</kbd></td><td>Detach (session keeps running)</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>b</kbd> <kbd>c</kbd></td><td>New window</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>b</kbd> <kbd>n</kbd> / <kbd>p</kbd></td><td>Next / previous window</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>b</kbd> <kbd>"</kbd> / <kbd>%</kbd></td><td>Split horizontal / vertical</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>b</kbd> <kbd>o</kbd></td><td>Cycle panes</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>b</kbd> <kbd>z</kbd></td><td>Zoom current pane</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>b</kbd> <kbd>[</kbd></td><td>Copy/scroll mode (<kbd>q</kbd> exits)</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>b</kbd> <kbd>?</kbd></td><td>Help</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="ssh">SSH at the prompt</h2>
+      <table>
+        <thead><tr><th>Keys</th><th>What</th></tr></thead>
+        <tbody>
+          <tr><td><code>~.</code></td><td>Force-close a stuck SSH session (must follow a newline)</td></tr>
+          <tr><td><code>~Ctrl+Z</code></td><td>Suspend SSH and drop to local shell; <code>fg</code> returns</td></tr>
+          <tr><td><code>~?</code></td><td>Show SSH escape help</td></tr>
+        </tbody>
+      </table>
+    </article>
+  </main>
+
+  <aside class="toc" aria-label="On this page">
+    <div class="toc-title">On this page</div>
+    <ul>
+      <li><a href="#cli">CLI editing</a></li>
+      <li><a href="#pagers">Pagers</a></li>
+      <li><a href="#tmux">tmux</a></li>
+      <li><a href="#ssh">SSH</a></li>
+    </ul>
+  </aside>
+</div>
+
+<script src="../assets/site.js"></script>
+</body>
+</html>

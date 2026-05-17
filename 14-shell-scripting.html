@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>14 · Shell scripting — Mentor's Guide to Linux</title>
+<meta name="description" content="From one-liner to tool. Shebang, set -euo pipefail, variables, loops, functions, exit codes, traps." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="brand">
+    <a href="index.html" style="border:none; color: inherit; display: contents;">
+      <span class="mark">/&gt;</span>
+      <span>The Mentor's Guide to Linux</span>
+    </a>
+    <span class="sub">NCS 205 handbook</span>
+  </div>
+  <div class="right">
+    <span class="crumbs"><a href="index.html" style="color: inherit; border: none;">HOME</a> / <strong>MODULE 14</strong></span>
+    <button class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+      <span class="icon">☼</span><span class="label">PAPER</span>
+    </button>
+    <button class="menu-btn" aria-label="Open table of contents" aria-expanded="false">MENU</button>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="sidebar" id="sidebar" aria-label="Module navigation"></aside>
+
+  <main class="main" id="main">
+    <article class="module">
+      <div class="meta-row">
+        <span><span class="label">MODULE</span>14</span>
+        <span><span class="label">MAPS TO</span>LABS 51–55</span>
+        <span><span class="label">TIME</span>~45 min</span>
+      </div>
+
+      <h1>Shell scripting</h1>
+      <p class="lede">A shell script is a one-liner that kept its job. 500 lines of Python will be replaced; a tight 30-line bash script lives for a decade.</p>
+
+      <h2 id="why"><span class="secnum">§1</span>Why this matters</h2>
+      <p>Every recurring task — daily backups, log rollups, deploy sequences, the cron job that emails the team a Friday report — is someone's shell script. Writing a clean, defensive, portable script is one of the highest-leverage skills in this whole guide.</p>
+
+      <h2 id="mental-model"><span class="secnum">§2</span>Mental model</h2>
+      <p>A shell script is just a file the shell reads top to bottom. Same syntax as the prompt. The shebang picks the interpreter:</p>
+<pre data-lang="bash"><code>#!/bin/bash
+# this is bash
+set -euo pipefail
+echo "hello"</code></pre>
+      <ul>
+        <li><code>#!/bin/bash</code> — run with bash.</li>
+        <li><code>#!/bin/sh</code> — run with POSIX shell (more portable).</li>
+        <li><code>set -e</code> — exit on the first error.</li>
+        <li><code>set -u</code> — error on unset variables.</li>
+        <li><code>set -o pipefail</code> — a pipeline fails if any stage fails.</li>
+      </ul>
+      <p><code>set -euo pipefail</code> is the single biggest improvement most scripts could get. It turns silent failures into loud ones.</p>
+
+      <h2 id="building-blocks"><span class="secnum">§3</span>Core building blocks</h2>
+
+      <h3>Variables and quoting</h3>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>name="Sarah"
+<span class="tok-prompt">$ </span>echo "Hello, $name"            <span class="tok-comment"># "Hello, Sarah"</span>
+<span class="tok-prompt">$ </span>echo 'Hello, $name'            <span class="tok-comment"># 'Hello, $name'   ← single quotes don't expand</span>
+<span class="tok-prompt">$ </span>echo "Hello, ${name}!"         <span class="tok-comment"># braces disambiguate</span>
+
+<span class="tok-comment"># Command substitution</span>
+<span class="tok-prompt">$ </span>today=$(date +%F)
+<span class="tok-prompt">$ </span>echo "Today is $today"
+
+<span class="tok-comment"># Math (bash)</span>
+<span class="tok-prompt">$ </span>count=$((3 + 4))</code></pre>
+
+      <p><strong>Quote your variables.</strong> <code>"$file"</code> not <code>$file</code>. Otherwise a filename with a space becomes two arguments.</p>
+
+      <h3>Conditionals</h3>
+<pre data-lang="bash"><code>if [[ -f /etc/hosts ]]; then
+  echo "exists"
+elif [[ -d /etc ]]; then
+  echo "/etc is a dir"
+else
+  echo "neither"
+fi
+
+# String comparison
+[[ "$name" == "Sarah" ]] &amp;&amp; echo "hi Sarah"
+
+# Numeric comparison
+(( count &gt; 5 )) &amp;&amp; echo "big"</code></pre>
+
+      <p><code>[[ ... ]]</code> is bash's improved test. Use it over the old <code>[ ... ]</code> when you can.</p>
+
+      <p>Common file tests:</p>
+      <table>
+        <thead><tr><th>Test</th><th>True if</th></tr></thead>
+        <tbody>
+          <tr><td><code>-e f</code></td><td>exists</td></tr>
+          <tr><td><code>-f f</code></td><td>regular file</td></tr>
+          <tr><td><code>-d f</code></td><td>directory</td></tr>
+          <tr><td><code>-r f</code></td><td>readable</td></tr>
+          <tr><td><code>-w f</code></td><td>writable</td></tr>
+          <tr><td><code>-x f</code></td><td>executable</td></tr>
+          <tr><td><code>-s f</code></td><td>non-empty</td></tr>
+          <tr><td><code>f1 -nt f2</code></td><td>f1 newer than f2</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Loops</h3>
+<pre data-lang="bash"><code># for over a list
+for h in web-01 web-02 web-03; do
+  echo "$h"
+done
+
+# for over glob (carefully)
+for log in /var/log/*.log; do
+  [[ -f "$log" ]] || continue
+  echo "$log"
+done
+
+# while reading lines
+while IFS= read -r line; do
+  echo "got: $line"
+done &lt; /etc/hostname
+
+# numeric C-style
+for ((i=1; i&lt;=5; i++)); do echo $i; done</code></pre>
+
+      <h3>Arguments and exit codes</h3>
+<pre data-lang="bash"><code>#!/bin/bash
+set -euo pipefail
+
+# Positional args
+echo "script: $0"
+echo "first arg: $1"
+echo "all args: $@"
+echo "count: $#"
+
+# Defaults
+: "${TIMEOUT:=30}"
+echo "timeout is $TIMEOUT"
+
+# Functions
+greet() {
+  local who="$1"
+  echo "hi, $who"
+}
+greet "world"
+
+# Exit codes
+exit 0      # success
+exit 1      # general failure</code></pre>
+
+      <h3>Useful idioms</h3>
+<pre data-lang="bash"><code># default if unset
+: "${LOG:=/tmp/script.log}"
+
+# log to both file and stdout
+exec &gt; &gt;(tee -a "$LOG") 2&gt;&amp;1
+
+# trap cleanup on exit
+cleanup() {
+  rm -f /tmp/myscript.$$.tmp
+}
+trap cleanup EXIT
+
+# require root
+[[ $EUID -eq 0 ]] || { echo "must run as root" &gt;&amp;2; exit 1; }
+
+# require a command exists
+command -v jq &gt;/dev/null 2&gt;&amp;1 || { echo "needs jq"; exit 1; }</code></pre>
+
+      <h2 id="walkthrough"><span class="secnum">§4</span>Guided walkthrough</h2>
+      <p>Make a real script — <code>~/bin/dailyreport.sh</code>:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>mkdir -p ~/bin
+<span class="tok-prompt">$ </span>cat &gt; ~/bin/dailyreport.sh &lt;&lt;'EOF'
+#!/bin/bash
+set -euo pipefail
+
+# === defaults ===
+: "${LOG_DIR:=/var/log}"
+: "${OUT_FILE:=$HOME/daily-$(date +%F).txt}"
+
+# === main ===
+{
+  echo "Daily report — $(date)"
+  echo "host: $(hostname)"
+  echo
+  echo "## disk usage"
+  df -h | grep -E '^/dev|Filesystem'
+  echo
+  echo "## top 5 largest files in $LOG_DIR"
+  sudo find "$LOG_DIR" -type f -size +1M -printf '%s %p\n' 2&gt;/dev/null \
+    | sort -rn | head -5 \
+    | awk '{ printf "  %6.1fM  %s\n", $1/1024/1024, $2 }'
+  echo
+  echo "## recent failed logins"
+  sudo lastb -n 5 2&gt;/dev/null || echo "  (lastb unavailable)"
+} &gt; "$OUT_FILE"
+
+echo "wrote $OUT_FILE"
+EOF
+
+<span class="tok-prompt">$ </span>chmod +x ~/bin/dailyreport.sh
+<span class="tok-prompt">$ </span>~/bin/dailyreport.sh
+<span class="tok-prompt">$ </span>cat ~/daily-*.txt</code></pre>
+
+      <p>Read every line. <code>{ ... } &gt; file</code> is <strong>command grouping with redirection</strong> — every command inside the braces writes to the same file.</p>
+
+      <h2 id="gotchas"><span class="secnum">§5</span>Gotchas</h2>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · word splitting on unquoted variables</span>
+        <p><code>cp $file /tmp/</code> breaks if <code>$file</code> has a space. Always <code>cp "$file" /tmp/</code>.</p>
+      </div>
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · <code>==</code> vs <code>=</code></span>
+        <p>Inside <code>[[ ... ]]</code>, both work for equality. Inside <code>[ ... ]</code> (legacy), only <code>=</code> is portable.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · <code>set -e</code> doesn't catch errors inside <code>if</code>/<code>||</code>/<code>&amp;&amp;</code></span>
+        <p>This is by design (so you can test commands), but surprises beginners.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · pipes mask errors</span>
+        <p><code>cmd1 | cmd2</code> exit code is cmd2's. Use <code>set -o pipefail</code> and check <code>${PIPESTATUS[@]}</code>.</p>
+      </div>
+      <div class="callout callout-tip">
+        <span class="callout-label">Tip · <code>bash -n script.sh</code></span>
+        <p>Syntax check without running. Use it before deploying.</p>
+      </div>
+      <div class="callout callout-tip">
+        <span class="callout-label">Tip · install <code>shellcheck</code></span>
+        <p>The script-linter you should install. It catches 90% of bash bugs <em>before</em> you ship.</p>
+      </div>
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor habit · every non-trivial script</span>
+        <p>Starts with <code>#!/bin/bash</code>, <code>set -euo pipefail</code>, a usage function, and a top-of-file comment. Ten extra seconds; pays for itself the first time you come back six months later.</p>
+      </div>
+
+      <h2 id="drills"><span class="secnum">§6</span>On-the-spot exercises</h2>
+
+      <div class="exercise">
+        <p><span class="ex-id">E14.1</span>Write <code>~/bin/hello.sh</code> that prints "hello from &lt;hostname&gt;" and exits 0. Make it executable.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cat &gt; ~/bin/hello.sh &lt;&lt;'EOF'
+#!/bin/bash
+echo "hello from $(hostname)"
+EOF
+<span class="tok-prompt">$ </span>chmod +x ~/bin/hello.sh
+<span class="tok-prompt">$ </span>~/bin/hello.sh</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E14.2</span>Extend it: if <code>$1</code> is passed, greet that name; otherwise "world."</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="bash"><code>#!/bin/bash
+who="${1:-world}"
+echo "hello, $who, from $(hostname)"</code></pre>
+          <p><code>${1:-world}</code> = "use $1 if set, otherwise 'world'."</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E14.3</span>Script that takes a directory and prints how many <code>.log</code> files it contains. Error if dir doesn't exist.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="bash"><code>#!/bin/bash
+set -euo pipefail
+
+dir="${1:-}"
+[[ -d "$dir" ]] || { echo "usage: $0 &lt;dir&gt;" &gt;&amp;2; exit 1; }
+
+count=$(find "$dir" -maxdepth 1 -name '*.log' -type f | wc -l)
+echo "$count .log files in $dir"</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E14.4</span>One-liner: "OK" if <code>/etc/hostname</code> exists and is readable, else "MISSING".</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>[[ -r /etc/hostname ]] &amp;&amp; echo OK || echo MISSING</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E14.5</span>Loop over every user in <code>/etc/passwd</code> and print "username -&gt; home".</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="bash"><code>while IFS=':' read -r user _ _ _ _ home _; do
+  echo "$user -&gt; $home"
+done &lt; /etc/passwd</code></pre>
+          <p><code>IFS=':'</code> lets the line split on colons. <code>_</code> = "I don't care about this field."</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E14.6</span>Backup helper: copy a file to <code>&lt;file&gt;.bak.YYYY-MM-DD</code>. Refuse if source doesn't exist.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="bash"><code>#!/bin/bash
+set -euo pipefail
+
+src="${1:-}"
+[[ -f "$src" ]] || { echo "usage: $0 &lt;file&gt;" &gt;&amp;2; exit 1; }
+
+dst="${src}.bak.$(date +%F)"
+cp -p "$src" "$dst"
+echo "backup: $dst"</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E14.7</span>Function <code>confirm</code> that prompts "Continue? [y/N]" and returns non-zero unless 'y'.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="bash"><code>confirm() {
+  read -r -p "Continue? [y/N] " ans
+  [[ "$ans" =~ ^[yY]$ ]]
+}
+
+confirm &amp;&amp; echo "going!" || { echo "abort"; exit 1; }</code></pre>
+          <p><code>=~</code> is bash's regex match operator inside <code>[[ ... ]]</code>.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E14.8</span>Run <code>shellcheck</code> on your <code>dailyreport.sh</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo apt install -y shellcheck
+<span class="tok-prompt">$ </span>shellcheck ~/bin/dailyreport.sh</code></pre>
+          <p>shellcheck will point out quoting issues, unset variables, command substitution warnings — listen to it.</p>
+        </div></details>
+      </div>
+
+      <h2 id="scenario"><span class="secnum">§7</span>Real-world sysadmin scenario</h2>
+      <p><strong>Preflight script before deploy.</strong> Must: (1) confirm we're on the deploy box, (2) clean git tree, (3) tests pass.</p>
+<pre data-lang="bash"><code>#!/bin/bash
+# preflight.sh — gate before deploy
+set -euo pipefail
+
+EXPECTED_HOST="deploy-01.prod"
+
+# 1. host check
+[[ "$(hostname)" == "$EXPECTED_HOST" ]] || {
+  echo "ERROR: must run on $EXPECTED_HOST, you're on $(hostname)" &gt;&amp;2
+  exit 1
+}
+
+# 2. clean working tree
+cd /srv/app
+if ! git diff --quiet || ! git diff --cached --quiet; then
+  echo "ERROR: working tree is dirty" &gt;&amp;2
+  git status --short
+  exit 2
+fi
+
+# 3. tests
+if ! ./run-tests.sh; then
+  echo "ERROR: tests failed" &gt;&amp;2
+  exit 3
+fi
+
+echo "OK — preflight passed at $(date -Iseconds)"</code></pre>
+
+      <p>25 lines that has saved real deployments. Note the <strong>distinct exit codes</strong> — your wrapper can decide what to do based on which check failed.</p>
+
+      <h2 id="recap"><span class="secnum">§8</span>What to remember</h2>
+      <ul>
+        <li>Top of every script: <code>#!/bin/bash</code> and <code>set -euo pipefail</code>.</li>
+        <li><strong>Quote your variables.</strong> Always.</li>
+        <li><code>[[ ... ]]</code> for tests; <code>(( ... ))</code> for math.</li>
+        <li><code>${VAR:-default}</code>, <code>${VAR:?error}</code> — learn parameter expansion gradually; it's powerful.</li>
+        <li><code>trap cleanup EXIT</code> for cleanup on exit.</li>
+        <li>Run <code>shellcheck</code> on every script.</li>
+        <li>Define exit codes deliberately — they're your script's API.</li>
+      </ul>
+
+      <a class="next-card" href="15-env-and-startup.html">
+        <span class="label">NEXT · MODULE 15</span>
+        <span class="title">Environment &amp; startup</span>
+        <span class="desc"><code>PATH</code>, aliases, and shell startup file order.</span>
+      </a>
+    </article>
+
+    <footer class="colophon">
+      <p>NCS 205 handbook · module 14 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
+    </footer>
+  </main>
+
+  <aside class="toc" aria-label="On this page">
+    <div class="toc-title">On this page</div>
+    <ul>
+      <li><a href="#why">§1 Why this matters</a></li>
+      <li><a href="#mental-model">§2 Mental model</a></li>
+      <li><a href="#building-blocks">§3 Building blocks</a></li>
+      <li><a href="#walkthrough">§4 Walkthrough</a></li>
+      <li><a href="#gotchas">§5 Gotchas</a></li>
+      <li><a href="#drills">§6 Exercises</a></li>
+      <li><a href="#scenario">§7 Scenario</a></li>
+      <li><a href="#recap">§8 What to remember</a></li>
+    </ul>
+  </aside>
+</div>
+
+<script src="assets/site.js"></script>
+</body>
+</html>

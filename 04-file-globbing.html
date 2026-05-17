@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>04 · File globbing — Mentor's Guide to Linux</title>
+<meta name="description" content="Wildcards *, ?, [], {} — and why the shell, not the command, does the matching." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="brand">
+    <a href="index.html" style="border:none; color: inherit; display: contents;">
+      <span class="mark">/&gt;</span>
+      <span>The Mentor's Guide to Linux</span>
+    </a>
+    <span class="sub">NCS 205 handbook</span>
+  </div>
+  <div class="right">
+    <span class="crumbs"><a href="index.html" style="color: inherit; border: none;">HOME</a> / <strong>MODULE 04</strong></span>
+    <button class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+      <span class="icon">☼</span><span class="label">PAPER</span>
+    </button>
+    <button class="menu-btn" aria-label="Open table of contents" aria-expanded="false">MENU</button>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="sidebar" id="sidebar" aria-label="Module navigation"></aside>
+
+  <main class="main" id="main">
+    <article class="module">
+      <div class="meta-row">
+        <span><span class="label">MODULE</span>04</span>
+        <span><span class="label">MAPS TO</span>LAB 10</span>
+        <span><span class="label">TIME</span>~25 min</span>
+      </div>
+
+      <h1>File globbing: making the shell match files for you</h1>
+      <p class="lede">Typing 200 filenames by hand is how interns get fired. Globs are how you stop.</p>
+
+      <h2 id="why"><span class="secnum">§1</span>Why this matters</h2>
+      <p>The shell has a tiny but powerful pattern language — <strong>globs</strong> — that turns <code>*.log</code> into "every .log file in this directory." It happens <em>before</em> your command runs: by the time <code>rm</code> sees its arguments, the shell has already expanded <code>*.tmp</code> into the actual list of files. Understanding that <strong>the shell, not the command, does the matching</strong> is the single most important glob insight.</p>
+
+      <h2 id="mental-model"><span class="secnum">§2</span>Mental model</h2>
+      <p>Glob expansion sits between you and the program:</p>
+<pre data-lang="diagram" data-nocopy="true"><code>   you type:    rm *.tmp
+   shell sees:  rm   (and expands *.tmp itself)
+   shell runs:  rm file1.tmp file2.tmp old.tmp
+   rm sees:     three filename arguments</code></pre>
+
+      <p>Two huge consequences:</p>
+      <ol>
+        <li><strong>Globs only match files that exist</strong> — at expansion time, the shell looks at the filesystem. If no files match, behavior depends on shell settings (usually the pattern is passed through literally — surprising).</li>
+        <li><strong>Globs are not regular expressions.</strong> Different syntax, different meaning. <code>*</code> in a glob means "any string"; <code>*</code> in regex means "zero or more of the previous." We'll meet regex in module 09; don't conflate them.</li>
+      </ol>
+
+      <h2 id="commands"><span class="secnum">§3</span>The four glob operators</h2>
+      <table>
+        <thead><tr><th>Operator</th><th>Matches</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td><code>*</code></td><td>Zero or more of any character</td><td><code>*.log</code> → <code>a.log</code>, <code>b.log</code>, <code>today.log</code></td></tr>
+          <tr><td><code>?</code></td><td>Exactly one of any character</td><td><code>file?.txt</code> → <code>file1.txt</code>, but <strong>not</strong> <code>file12.txt</code></td></tr>
+          <tr><td><code>[abc]</code></td><td>One character from the set</td><td><code>[Aa]uto</code> → <code>Auto</code> or <code>auto</code></td></tr>
+          <tr><td><code>[a-z]</code></td><td>One character from the range</td><td><code>report-[0-9].pdf</code> → <code>report-3.pdf</code> etc.</td></tr>
+          <tr><td><code>[!abc]</code> or <code>[^abc]</code></td><td>One character <em>not</em> in the set</td><td><code>[!.]*</code> → files not starting with <code>.</code></td></tr>
+          <tr><td><code>{a,b,c}</code></td><td>Brace expansion — <strong>expands to a list</strong></td><td><code>{eth0,eth1,wlan0}</code> → 3 arguments</td></tr>
+        </tbody>
+      </table>
+
+      <p>A subtle but important fact: <strong>brace expansion <code>{}</code> is different from a glob.</strong> Globs check the filesystem; braces are a pure text expansion (they don't need files to exist).</p>
+
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>echo {1,2,3}.txt          <span class="tok-comment"># → 1.txt 2.txt 3.txt   (always)</span>
+<span class="tok-prompt">$ </span>echo *.txt                <span class="tok-comment"># → only files actually ending in .txt</span></code></pre>
+
+      <p>You can combine them: <code>cp file.txt{,.bak}</code> is a slick way to make a backup — it expands to <code>cp file.txt file.txt.bak</code>.</p>
+
+      <h3>What <code>*</code> does NOT do</h3>
+      <ul>
+        <li><strong>Doesn't match dotfiles</strong> by default. <code>rm *</code> won't touch <code>.bashrc</code>. Use <code>.*</code> (and be careful — it matches <code>.</code> and <code>..</code> too).</li>
+        <li><strong>Doesn't cross <code>/</code> boundaries</strong> in basic globs. <code>*</code> matches inside <em>one</em> directory, not into subdirectories. For recursive matching: <code>**</code> (with <code>shopt -s globstar</code> in bash 4+), or use <code>find</code> (module 10).</li>
+      </ul>
+
+      <h2 id="walkthrough"><span class="secnum">§4</span>Guided walkthrough</h2>
+      <p>The orientation sandbox at <code>~/ncs205-sandbox/globbing/</code> was created for this. If you skipped that, re-run <code>~/setup-sample-data.sh</code>.</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cd ~/ncs205-sandbox/globbing/
+<span class="tok-prompt">$ </span>ls                            <span class="tok-comment"># baseline view of the test files</span>
+<span class="tok-prompt">$ </span>echo ---
+<span class="tok-prompt">$ </span>ls A*                         <span class="tok-comment"># everything starting with A</span>
+<span class="tok-prompt">$ </span>ls *B*                        <span class="tok-comment"># anything containing B</span>
+<span class="tok-prompt">$ </span>ls A?                         <span class="tok-comment"># A followed by exactly one char  → AA AB AC AD</span>
+<span class="tok-prompt">$ </span>ls [AB]A                      <span class="tok-comment"># AA, BA</span>
+<span class="tok-prompt">$ </span>ls [A-C][A-C]                 <span class="tok-comment"># AA AB AC BA BB BC CA CB CC (but only those that exist)</span>
+<span class="tok-prompt">$ </span>ls *[!,]                      <span class="tok-comment"># files NOT ending in comma</span></code></pre>
+
+      <p>Watch what happens when you ask for something nonexistent:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>ls Z*
+ls: cannot access 'Z*': No such file or directory   <span class="tok-comment"># ← glob didn't expand</span></code></pre>
+
+      <p>That literal <code>Z*</code> got passed through because no file matched. That's bash's default behavior. Different shells (zsh, fish) behave differently.</p>
+
+      <p>Brace expansion — pure text:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>echo node-{1,2,3}.example.com
+node-1.example.com node-2.example.com node-3.example.com
+
+<span class="tok-prompt">$ </span>mkdir -p logs/{2024,2025,2026}/{jan,feb,mar}
+<span class="tok-prompt">$ </span>ls -R logs/</code></pre>
+
+      <p>That last one created 9 directories with one command. Read it carefully — that's the move that wins a sysadmin 20 minutes a day.</p>
+
+      <h2 id="gotchas"><span class="secnum">§5</span>Gotchas</h2>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · <code>rm * .*</code> is a foot-cannon</span>
+        <p>The second pattern matches <code>.</code> and <code>..</code>. Modern <code>rm</code> refuses to delete those, but don't rely on it. Use <code>rm -- .[!.]*</code> if you really need to target dotfiles.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · quoting kills the glob</span>
+        <p><code>rm "*.tmp"</code> looks for a single literal file <em>called <code>*.tmp</code></em>. Without quotes the shell expands it. Single quotes and double quotes both prevent expansion.</p>
+      </div>
+      <div class="callout callout-tip">
+        <span class="callout-label">Tip · literal <code>*</code> in a filename</span>
+        <p>Can be matched with <code>\*</code> or <code>'*'</code> or <code>[*]</code>. The sandbox has a file actually named <code>A*</code>; <code>ls 'A*'</code> lists only that file.</p>
+      </div>
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · expansion happens before piping</span>
+        <p><code>ls *.log | grep error</code> runs <code>ls</code> on every <code>.log</code> file then pipes file <em>names</em> — not their <em>contents</em> — to <code>grep</code>. To search log contents, use <code>grep error *.log</code>.</p>
+      </div>
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · no-match behavior is configurable</span>
+        <p><code>shopt -s failglob</code> makes bash error instead of passing through. <code>shopt -s nullglob</code> makes it expand to nothing. Each has its trade-offs in scripts.</p>
+      </div>
+
+      <h2 id="drills"><span class="secnum">§6</span>On-the-spot exercises</h2>
+      <p>The directory contains:</p>
+<pre data-lang="dir" data-nocopy="true"><code>A   A*   A,   AA   AB   ABC   AC   AD   B,   BA   BB   BC   BD   BE   BF</code></pre>
+
+      <div class="exercise">
+        <p><span class="ex-id">E4.1</span>List only <code>AB</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>ls AB</code></pre>
+          <p>When the literal name is unambiguous, you don't need a glob at all.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E4.2</span>List all files containing a <code>B</code> in their name.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>ls *B*</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E4.3</span>List only the files <code>BB</code>, <code>BC</code>, <code>BD</code>, <code>BE</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>ls B[B-E]</code></pre>
+          <p>A range character class is tighter than <code>B*</code> (which would also match <code>BA</code> and <code>BF</code>).</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E4.4</span>List only the file literally named <code>A*</code> (yes, with the star in the name).</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>ls 'A*'</code></pre>
+          <p>Or <code>ls A\*</code>. Both prevent the shell from expanding <code>*</code>.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E4.5</span>List only <code>AB</code> and <code>A*</code> together.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>ls AB 'A*'</code></pre>
+          <p>Two separate arguments — give them to <code>ls</code>, no need to compress into one glob.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E4.6</span>List all PDF files in <code>/opt/pub/ncs205/submit/collected/</code> (class shell server only) with <code>lab2</code> in the name.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>ls /opt/pub/ncs205/submit/collected/*lab2*.pdf</code></pre>
+          <p>The two <code>*</code> wildcards let the lab number sit anywhere in the filename.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E4.7</span>In one command, create a backup of <code>/etc/hosts</code> named <code>hosts.bak</code> <em>in the current directory</em> using brace expansion.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cp /etc/hosts{,.bak}    <span class="tok-comment"># ← won't work directly — expands to /etc/hosts /etc/hosts.bak</span></code></pre>
+          <p>That actually expands to <code>cp /etc/hosts /etc/hosts.bak</code>, which writes to <code>/etc</code> (often permission-denied). To land in the current dir, be explicit:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cp /etc/hosts ./hosts.bak</code></pre>
+          <p>Brace expansion is great for <code>cp file{,.bak}</code> <em>within the same directory</em>. Across dirs, write it out.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E4.8</span>List files in <code>/usr/bin/</code> with exactly 4-character names.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>ls /usr/bin/????</code></pre>
+          <p>Four <code>?</code> = exactly four characters. (Glob doesn't have repetition counts like regex's <code>{4}</code>.)</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E4.9</span>List files in <code>/usr/bin/</code> with names that start with <code>s</code> and end with <code>t</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>ls /usr/bin/s*t</code></pre>
+          <p><code>*</code> here means "any characters in between."</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E4.10</span>In <code>/usr/bin/</code>, list files whose names start with <code>a</code> or <code>b</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>ls /usr/bin/[ab]*</code></pre>
+          <p>A character class for the first character; <code>*</code> for the rest.</p>
+        </div></details>
+      </div>
+
+      <h2 id="scenario"><span class="secnum">§7</span>Real-world sysadmin scenario</h2>
+      <p><strong>Friday log-cleanup.</strong> Your retention policy says "keep app logs for 30 days, keep audit logs for a year." A naive <code>rm /var/log/myapp/*.log</code> would nuke them all. Better:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>ls /var/log/myapp/                              <span class="tok-comment"># see what's there</span>
+<span class="tok-prompt">$ </span>ls /var/log/myapp/*.log.{1..30}.gz              <span class="tok-comment"># files rotated 1-30 days ago</span>
+<span class="tok-prompt">$ </span>find /var/log/myapp/ -name '*.log.*.gz' -mtime +30 -print   <span class="tok-comment"># confirm via find</span>
+<span class="tok-prompt">$ </span>find /var/log/myapp/ -name '*.log.*.gz' -mtime +30 -delete  <span class="tok-comment"># actually delete</span></code></pre>
+
+      <p>Globs are great when the <em>naming</em> makes the answer obvious. When the criterion is <em>age</em>, <code>find</code> is better than a glob (module 10).</p>
+
+      <p>Another classic — rolling out a config to many hosts:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>for host in web-{01..09}.prod.example.com; do
+&gt;   scp nginx.conf "$host":/etc/nginx/
+&gt; done</code></pre>
+
+      <p><code>web-{01..09}</code> brace-expands to nine zero-padded hostnames in one stroke. That same pattern with raw typing is where typos breed.</p>
+
+      <h2 id="recap"><span class="secnum">§8</span>What to remember</h2>
+      <ul>
+        <li>The <strong>shell</strong> does the matching, not the command.</li>
+        <li><code>*</code> = any string (not crossing <code>/</code>), <code>?</code> = one char, <code>[abc]</code> = one of a set, <code>[a-z]</code> = range, <code>[!abc]</code> = not in set.</li>
+        <li><code>{a,b,c}</code> is brace expansion — different from globbing, doesn't need files to exist.</li>
+        <li>Globs are not regex. Different syntax, different meaning.</li>
+        <li>Quote your patterns when you want them <em>not</em> expanded.</li>
+        <li>For recursive or attribute-based matching, reach for <code>find</code> (module 10).</li>
+      </ul>
+
+      <a class="next-card" href="05-viewing-text.html">
+        <span class="label">NEXT · MODULE 05</span>
+        <span class="title">Viewing text files</span>
+        <span class="desc"><code>cat</code>, <code>less</code>, <code>head</code>, <code>tail</code>, <code>wc</code>, and the art of looking before you act.</span>
+      </a>
+    </article>
+
+    <footer class="colophon">
+      <p>NCS 205 handbook · module 04 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
+    </footer>
+  </main>
+
+  <aside class="toc" aria-label="On this page">
+    <div class="toc-title">On this page</div>
+    <ul>
+      <li><a href="#why">§1 Why this matters</a></li>
+      <li><a href="#mental-model">§2 Mental model</a></li>
+      <li><a href="#commands">§3 Glob operators</a></li>
+      <li><a href="#walkthrough">§4 Walkthrough</a></li>
+      <li><a href="#gotchas">§5 Gotchas</a></li>
+      <li><a href="#drills">§6 Exercises</a></li>
+      <li><a href="#scenario">§7 Scenario</a></li>
+      <li><a href="#recap">§8 What to remember</a></li>
+    </ul>
+  </aside>
+</div>
+
+<script src="assets/site.js"></script>
+</body>
+</html>
