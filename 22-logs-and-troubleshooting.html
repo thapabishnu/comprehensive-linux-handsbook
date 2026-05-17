@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>22 · Logs &amp; troubleshooting — Mentor's Guide to Linux</title>
+<meta name="description" content="/var/log, journalctl, dmesg, and the discipline of reading logs before you act." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="brand">
+    <a href="index.html" style="border:none; color: inherit; display: contents;">
+      <span class="mark">/&gt;</span>
+      <span>The Mentor's Guide to Linux</span>
+    </a>
+    <span class="sub">NCS 205 handbook</span>
+  </div>
+  <div class="right">
+    <span class="crumbs"><a href="index.html" style="color: inherit; border: none;">HOME</a> / <strong>MODULE 22</strong></span>
+    <button class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+      <span class="icon">☼</span><span class="label">PAPER</span>
+    </button>
+    <button class="menu-btn" aria-label="Open table of contents" aria-expanded="false">MENU</button>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="sidebar" id="sidebar" aria-label="Module navigation"></aside>
+
+  <main class="main" id="main">
+    <article class="module">
+      <div class="meta-row">
+        <span><span class="label">MODULE</span>22</span>
+        <span><span class="label">MAPS TO</span>LABS B1–C1</span>
+        <span><span class="label">TIME</span>~40 min</span>
+      </div>
+
+      <h1>Logs and troubleshooting</h1>
+      <p class="lede">Every previous module has said "check the logs." Now we cover it properly. Reading logs well is the difference between sysadmin and senior sysadmin.</p>
+
+      <h2 id="why"><span class="secnum">§1</span>Why this matters</h2>
+      <p>The commands are easy; the discipline of <em>what to look at, in what order</em> is the real skill.</p>
+
+      <h2 id="mental-model"><span class="secnum">§2</span>Mental model</h2>
+      <p>Linux logs live in two places:</p>
+      <ol>
+        <li><strong><code>/var/log/</code></strong> — text files written by syslog/rsyslog. Old, universal, easy to grep.</li>
+        <li><strong>systemd journal</strong> — structured binary log, queried via <code>journalctl</code>. Modern, richer.</li>
+      </ol>
+      <p>Most modern distros use <em>both</em>. The right ordering when something breaks:</p>
+<pre data-lang="diagram" data-nocopy="true"><code>1. journalctl -u UNIT --since "X" -p err     ← what does the failing service say?
+2. dmesg --since "X"                          ← anything from the kernel?
+3. /var/log/syslog (or messages)              ← system-wide events
+4. application-specific logs                  ← /var/log/nginx/, /var/log/mysql/</code></pre>
+
+      <h2 id="text-logs"><span class="secnum">§3</span><code>/var/log/</code> text logs</h2>
+      <table>
+        <thead><tr><th>Path</th><th>What's there</th></tr></thead>
+        <tbody>
+          <tr><td><code>/var/log/syslog</code> (Debian) / <code>messages</code> (RHEL)</td><td>General system events</td></tr>
+          <tr><td><code>/var/log/auth.log</code> / <code>secure</code></td><td>Authentication, sudo, su</td></tr>
+          <tr><td><code>/var/log/dmesg</code></td><td>Kernel boot messages</td></tr>
+          <tr><td><code>/var/log/kern.log</code></td><td>Live kernel messages</td></tr>
+          <tr><td><code>/var/log/nginx/</code>, etc.</td><td>Per-app</td></tr>
+          <tr><td><code>/var/log/wtmp</code> (use <code>last</code>)</td><td>Login history</td></tr>
+          <tr><td><code>/var/log/btmp</code> (use <code>lastb</code>)</td><td>Failed logins</td></tr>
+        </tbody>
+      </table>
+
+      <table>
+        <thead><tr><th>Tool</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><code>less +F /var/log/syslog</code></td><td>Follow a text log</td></tr>
+          <tr><td><code>tail -F /var/log/syslog</code></td><td>Same — survives log rotation</td></tr>
+          <tr><td><code>zgrep PATTERN /var/log/*.gz</code></td><td>grep across compressed rotated logs</td></tr>
+          <tr><td><code>logrotate -d /etc/logrotate.conf</code></td><td>Dry-run log rotation rules</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="journal"><span class="secnum">§4</span><code>journalctl</code></h2>
+      <table>
+        <thead><tr><th>Command</th><th>What it shows</th></tr></thead>
+        <tbody>
+          <tr><td><code>journalctl</code></td><td>Whole journal</td></tr>
+          <tr><td><code>journalctl -e</code></td><td>Jump to end</td></tr>
+          <tr><td><code>journalctl -f</code></td><td>Follow live</td></tr>
+          <tr><td><code>journalctl -k</code></td><td>Kernel messages only</td></tr>
+          <tr><td><code>journalctl -u nginx</code></td><td>One unit's messages</td></tr>
+          <tr><td><code>journalctl -p err</code></td><td>Priority ≥ err</td></tr>
+          <tr><td><code>journalctl --since "1 hour ago"</code></td><td>Time-bounded</td></tr>
+          <tr><td><code>journalctl -b</code></td><td>This boot only</td></tr>
+          <tr><td><code>journalctl -b -1</code></td><td>Previous boot</td></tr>
+          <tr><td><code>journalctl --list-boots</code></td><td>All recorded boots</td></tr>
+          <tr><td><code>journalctl _PID=12345</code></td><td>All messages from one PID</td></tr>
+        </tbody>
+      </table>
+
+      <h3><code>dmesg</code></h3>
+      <table>
+        <thead><tr><th>Command</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><code>dmesg</code></td><td>Kernel ring buffer (boot + runtime kernel messages)</td></tr>
+          <tr><td><code>dmesg -T</code></td><td>Human timestamps</td></tr>
+          <tr><td><code>dmesg -w</code></td><td>Watch live</td></tr>
+          <tr><td><code>dmesg --level=err,warn</code></td><td>Filter severities</td></tr>
+        </tbody>
+      </table>
+
+      <h3>System health snapshots</h3>
+      <table>
+        <thead><tr><th>Command</th><th>What it shows</th></tr></thead>
+        <tbody>
+          <tr><td><code>uptime</code></td><td>Load averages</td></tr>
+          <tr><td><code>free -h</code></td><td>Memory</td></tr>
+          <tr><td><code>df -h</code></td><td>Disk per filesystem</td></tr>
+          <tr><td><code>du -sh /path/*</code></td><td>Disk usage per directory</td></tr>
+          <tr><td><code>iostat 1 5</code></td><td>I/O stats (install <code>sysstat</code>)</td></tr>
+          <tr><td><code>vmstat 1 5</code></td><td>CPU/memory/IO summary</td></tr>
+          <tr><td><code>top</code> / <code>htop</code></td><td>Live processes</td></tr>
+          <tr><td><code>last</code>, <code>lastb</code>, <code>who</code>, <code>w</code></td><td>Logins</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="walkthrough"><span class="secnum">§5</span>Guided walkthrough</h2>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo tail -50 /var/log/syslog
+<span class="tok-prompt">$ </span>sudo tail -F /var/log/syslog
+<span class="tok-comment"># in another terminal:</span>
+<span class="tok-prompt">$ </span>sudo systemctl restart ssh
+
+<span class="tok-comment"># the journal</span>
+<span class="tok-prompt">$ </span>journalctl -e -n 30
+<span class="tok-prompt">$ </span>journalctl -u ssh -n 10
+<span class="tok-prompt">$ </span>journalctl --since "10 min ago"
+<span class="tok-prompt">$ </span>journalctl -p err -b
+<span class="tok-prompt">$ </span>journalctl -k --since "1 hour ago"
+
+<span class="tok-comment"># kernel ring buffer</span>
+<span class="tok-prompt">$ </span>dmesg -T --level=err,warn | tail
+
+<span class="tok-comment"># system snapshot</span>
+<span class="tok-prompt">$ </span>uptime
+<span class="tok-prompt">$ </span>free -h
+<span class="tok-prompt">$ </span>df -h
+<span class="tok-prompt">$ </span>top -bn1 | head -20
+
+<span class="tok-comment"># login history</span>
+<span class="tok-prompt">$ </span>last | head
+<span class="tok-prompt">$ </span>sudo lastb | head</code></pre>
+
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor habit · five-command health sweep</span>
+        <p>When you don't know what's wrong, run <code>uptime</code>, <code>free -h</code>, <code>df -h</code>, <code>top -bn1</code>, <code>journalctl -p err -b | tail -30</code>. Always run this <em>before</em> you start randomly restarting things. It gives you 80% of what you need to form a hypothesis.</p>
+      </div>
+
+      <h2 id="failure-patterns"><span class="secnum">§6</span>Common failure patterns</h2>
+      <table>
+        <thead><tr><th>Symptom</th><th>First place to look</th></tr></thead>
+        <tbody>
+          <tr><td>Service won't start</td><td><code>systemctl status SVC</code> then <code>journalctl -u SVC -p err</code></td></tr>
+          <tr><td>Box "feels slow"</td><td><code>uptime</code> → <code>top</code> → <code>iostat</code></td></tr>
+          <tr><td>"Disk full"</td><td><code>df -h</code> → <code>du -sh /var/* /tmp/* /home/*</code> → <code>find / -size +1G</code></td></tr>
+          <tr><td>Can't log in</td><td><code>sudo tail /var/log/auth.log</code> or <code>journalctl -u ssh</code></td></tr>
+          <tr><td>Random reboots</td><td><code>last reboot</code>, <code>dmesg</code>, <code>journalctl --list-boots</code></td></tr>
+          <tr><td>App crashes</td><td><code>journalctl -u APP -p err</code>, app's own log, dmesg for OOM</td></tr>
+          <tr><td>OOM killer activity</td><td><code>dmesg | grep -i oom</code>, <code>journalctl -k | grep -i oom</code></td></tr>
+          <tr><td>Network flakiness</td><td><code>dmesg | grep -iE 'link|eth|wifi'</code>, <code>ip -s link</code></td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="gotchas"><span class="secnum">§7</span>Gotchas</h2>
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · time matters</span>
+        <p>Pin every incident to a precise time window. <code>--since</code> / <code>--until</code> saves enormous noise.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · <code>/var/log/syslog</code> rotates</span>
+        <p>Look in <code>syslog.1</code>, <code>syslog.2.gz</code> for older history. <code>zgrep</code> reads <code>.gz</code> directly.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · <code>dmesg</code> is a ring buffer</span>
+        <p>Oldest messages get evicted. <code>journalctl -k</code> keeps them longer.</p>
+      </div>
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · journal persistence</span>
+        <p>Without <code>/var/log/journal/</code> the journal is volatile. <code>sudo mkdir -p /var/log/journal &amp;&amp; sudo systemctl restart systemd-journald</code>.</p>
+      </div>
+      <div class="callout callout-tip">
+        <span class="callout-label">Tip · don't <code>cat</code> a huge log</span>
+        <p><code>less</code> it, or page with <code>tail/head</code>.</p>
+      </div>
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor maxim</span>
+        <p>A "fix" with no log evidence is a guess. If your change didn't appear in logs as the cause, your fix won't appear in logs as the cure.</p>
+      </div>
+
+      <h2 id="drills"><span class="secnum">§8</span>On-the-spot exercises</h2>
+
+      <div class="exercise">
+        <p><span class="ex-id">E22.1</span>Show last 50 lines of <code>/var/log/syslog</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo tail -n 50 /var/log/syslog</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E22.2</span>Follow the journal live, filtered to error priority.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo journalctl -f -p err</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E22.3</span>Show all kernel messages from the last hour.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo journalctl -k --since "1 hour ago"</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E22.4</span>Find every line in this boot's journal that mentions OOM.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo journalctl -b -k | grep -i oom</code></pre>
+          <p>"Out of memory" / "Killed process" = the kernel's OOM killer fired.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E22.5</span>Failed SSH login attempts recently?</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo lastb | head
+<span class="tok-prompt">$ </span>sudo grep "Failed password" /var/log/auth.log | wc -l</code></pre>
+          <p>Internet-exposed SSH typically sees thousands per day. Why we set up keys + 2FA in module 19.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E22.6</span>Every error log line from <code>nginx</code> in last 24h.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo journalctl -u nginx -p err --since "24 hours ago"
+<span class="tok-prompt">$ </span>sudo less +G /var/log/nginx/error.log</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E22.7</span>Show every log line tagged with PID 4242.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>journalctl _PID=4242</code></pre>
+          <p><code>_PID=</code> is a journal match. Same syntax for <code>_UID=</code>, <code>_SYSTEMD_UNIT=</code>.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E22.8</span>Identify the 5 largest directories under <code>/var/</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo du -h /var/* 2&gt;/dev/null | sort -rh | head -5</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E22.9</span>Tail-follow <code>auth.log</code> in real time.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo tail -F /var/log/auth.log</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E22.10</span>Times of the last 5 reboots.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>last reboot | head -5
+<span class="tok-prompt">$ </span>journalctl --list-boots</code></pre>
+        </div></details>
+      </div>
+
+      <h2 id="scenario"><span class="secnum">§9</span>Real-world sysadmin scenario</h2>
+      <p><strong>3 AM page:</strong> <em>"web-02 not responding."</em></p>
+<pre data-lang="sh"><code><span class="tok-comment"># Health snapshot</span>
+<span class="tok-prompt">$ </span>uptime                         <span class="tok-comment"># load avg: 18.2 12.1 6.4  ← bad and getting worse</span>
+<span class="tok-prompt">$ </span>free -h                        <span class="tok-comment"># 7.8G used / 8.0G total, swap 100%</span>
+<span class="tok-prompt">$ </span>df -h                          <span class="tok-comment"># /var 99% full</span>
+<span class="tok-prompt">$ </span>journalctl -p err -b | tail -30
+<span class="tok-comment"># "Could not allocate space for log entry"</span>
+<span class="tok-comment"># "Out of memory: Killed process 1234 (nginx)"</span></code></pre>
+
+      <p>Full story: disk filled → nginx couldn't write → swap filled with bloated processes → OOM killer murdered things. The fix isn't "restart nginx" — it's "clear /var/log."</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo du -sh /var/log/* | sort -rh | head -5
+<span class="tok-comment"># /var/log/myapp/   12G  ← log rotation isn't running</span>
+<span class="tok-prompt">$ </span>sudo truncate -s 0 /var/log/myapp/big.log
+<span class="tok-prompt">$ </span>sudo systemctl restart myapp
+<span class="tok-prompt">$ </span>sudo logrotate -f /etc/logrotate.d/myapp</code></pre>
+
+      <p>Total time: under 5 minutes. Real diagnosis followed by real fix. You did <em>not</em> restart things until you understood <em>why</em> they had failed. That's the principle that ran through this entire guide.</p>
+
+      <h2 id="recap"><span class="secnum">§10</span>What to remember</h2>
+      <ul>
+        <li>Two log systems: <code>/var/log/*</code> and the journal.</li>
+        <li>Health snapshot first: <code>uptime</code>, <code>free -h</code>, <code>df -h</code>, <code>top -bn1</code>, <code>journalctl -p err -b | tail</code>.</li>
+        <li>Always pin to a time window.</li>
+        <li>Read logs <em>before</em> you act. Restart-without-understanding is the #1 way to make incidents worse.</li>
+      </ul>
+
+      <div class="callout callout-mentor" style="margin-top: 3em;">
+        <span class="callout-label">You finished the handbook 🎓</span>
+        <p>Twenty-three modules. Hundreds of exercises. Real scenarios for every one. If you've worked through these, you have the foundation of a real Linux sysadmin — and far more depth than what NCS 205's labs are testing.</p>
+        <p>Where to go next:</p>
+        <ul>
+          <li><strong>Linux Pocket Guide</strong> (Daniel Barrett) — the commands as reference.</li>
+          <li><strong>The Linux Programming Interface</strong> (Michael Kerrisk) — the systems book; deep but legendary.</li>
+          <li><strong>LWN.net</strong> — the kernel/distros community's weekly.</li>
+        </ul>
+        <p>And <strong>keep typing</strong>. That's the whole secret. Build a homelab. Break it on purpose. Fix it. Repeat. Five years from now you'll do this for a living.</p>
+        <p style="text-align: right;"><em>— Your mentor</em></p>
+      </div>
+
+      <a class="next-card" href="index.html">
+        <span class="label">FINISHED · BACK TO</span>
+        <span class="title">Home</span>
+        <span class="desc">Return to the index, or revisit any module.</span>
+      </a>
+    </article>
+
+    <footer class="colophon">
+      <p>NCS 205 handbook · module 22 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
+    </footer>
+  </main>
+
+  <aside class="toc" aria-label="On this page">
+    <div class="toc-title">On this page</div>
+    <ul>
+      <li><a href="#why">§1 Why this matters</a></li>
+      <li><a href="#mental-model">§2 Mental model</a></li>
+      <li><a href="#text-logs">§3 /var/log</a></li>
+      <li><a href="#journal">§4 journalctl</a></li>
+      <li><a href="#walkthrough">§5 Walkthrough</a></li>
+      <li><a href="#failure-patterns">§6 Failure patterns</a></li>
+      <li><a href="#gotchas">§7 Gotchas</a></li>
+      <li><a href="#drills">§8 Exercises</a></li>
+      <li><a href="#scenario">§9 Scenario</a></li>
+      <li><a href="#recap">§10 What to remember</a></li>
+    </ul>
+  </aside>
+</div>
+
+<script src="assets/site.js"></script>
+</body>
+</html>

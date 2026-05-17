@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>11 · Processes &amp; jobs — Mentor's Guide to Linux</title>
+<meta name="description" content="ps, top, kill, signals, jobs, nohup, tmux — control of running things." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="brand">
+    <a href="index.html" style="border:none; color: inherit; display: contents;">
+      <span class="mark">/&gt;</span>
+      <span>The Mentor's Guide to Linux</span>
+    </a>
+    <span class="sub">NCS 205 handbook</span>
+  </div>
+  <div class="right">
+    <span class="crumbs"><a href="index.html" style="color: inherit; border: none;">HOME</a> / <strong>MODULE 11</strong></span>
+    <button class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+      <span class="icon">☼</span><span class="label">PAPER</span>
+    </button>
+    <button class="menu-btn" aria-label="Open table of contents" aria-expanded="false">MENU</button>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="sidebar" id="sidebar" aria-label="Module navigation"></aside>
+
+  <main class="main" id="main">
+    <article class="module">
+      <div class="meta-row">
+        <span><span class="label">MODULE</span>11</span>
+        <span><span class="label">MAPS TO</span>LABS 24–26</span>
+        <span><span class="label">TIME</span>~35 min</span>
+      </div>
+
+      <h1>Processes and jobs</h1>
+      <p class="lede">A box "running slow" or a service "stuck" almost always has its answer in <code>ps</code>, <code>top</code>, or <code>kill</code>.</p>
+
+      <h2 id="why"><span class="secnum">§1</span>Why this matters</h2>
+      <p>Every running thing on Linux — your shell, the web server, your editor, the kernel modules pretending to be files — is or relates to a <strong>process</strong>. Inspecting, signaling, backgrounding, and (carefully) killing them is the bread and butter of operations.</p>
+
+      <h2 id="mental-model"><span class="secnum">§2</span>Mental model</h2>
+      <p>A process has:</p>
+      <ul>
+        <li>A <strong>PID</strong> (process ID — a unique integer).</li>
+        <li>A <strong>PPID</strong> (parent process ID — the process that spawned it).</li>
+        <li>A <strong>UID/GID</strong> (whose privileges it runs with).</li>
+        <li>A <strong>state</strong> — Running, Sleeping, Stopped, Zombie.</li>
+        <li><strong>Resources</strong> — open file descriptors, CPU/memory usage.</li>
+      </ul>
+      <p>Every process has a parent. Trace up far enough and you reach <code>PID 1</code> — <code>init</code> or <code>systemd</code>, the first thing the kernel runs.</p>
+
+<pre data-lang="tree" data-nocopy="true"><code>   systemd (PID 1)
+     ├─ sshd
+     │   └─ sshd: yourname@pts/0
+     │       └─ bash (your shell)
+     │           └─ vim ← this is YOU right now
+     ├─ nginx
+     │   ├─ nginx: worker 1
+     │   └─ nginx: worker 2
+     └─ cron</code></pre>
+
+      <p>You can ask the kernel anything about any process via <code>/proc/&lt;PID&gt;/</code> — a virtual filesystem of process internals.</p>
+
+      <h3>Foreground, background, jobs</h3>
+      <p>When you run a command, by default it runs <strong>in the foreground</strong> — it owns your terminal until it exits. You can:</p>
+      <ul>
+        <li>Add <code>&amp;</code> at the end → runs <strong>in the background</strong>.</li>
+        <li>Press <kbd>Ctrl</kbd>+<kbd>Z</kbd> → <strong>suspends</strong> the foreground process (stops it; doesn't kill).</li>
+        <li><code>bg</code> → resume a suspended process in the background.</li>
+        <li><code>fg</code> → bring a backgrounded job back to the foreground.</li>
+      </ul>
+      <p>A <em>job</em> is a shell concept (one or more processes started by one command line). Jobs have job IDs like <code>%1</code>, <code>%2</code>. Processes have PIDs.</p>
+
+      <h2 id="commands"><span class="secnum">§3</span>Core commands</h2>
+
+      <h3>Inspecting</h3>
+      <table>
+        <thead><tr><th>Command</th><th>What it shows</th></tr></thead>
+        <tbody>
+          <tr><td><code>ps</code></td><td>Your processes in this terminal.</td></tr>
+          <tr><td><code>ps -ef</code></td><td>Every process, full format (POSIX).</td></tr>
+          <tr><td><code>ps aux</code></td><td>Every process, BSD style (common on Linux).</td></tr>
+          <tr><td><code>ps -fU yourname</code></td><td>Every process owned by you.</td></tr>
+          <tr><td><code>ps -e --forest</code></td><td>Tree view of process parent/child.</td></tr>
+          <tr><td><code>pgrep pattern</code></td><td>PIDs of processes matching name.</td></tr>
+          <tr><td><code>pidof program</code></td><td>PID(s) of running <code>program</code>.</td></tr>
+          <tr><td><code>top</code></td><td>Live process view (sorted by CPU).</td></tr>
+          <tr><td><code>htop</code></td><td>Friendlier <code>top</code>.</td></tr>
+          <tr><td><code>pstree</code></td><td>Process tree.</td></tr>
+          <tr><td><code>cat /proc/&lt;PID&gt;/status</code></td><td>Detailed kernel info.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Signaling and killing</h3>
+      <table>
+        <thead><tr><th>Command</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><code>kill PID</code></td><td>Send <code>TERM</code> — please exit.</td></tr>
+          <tr><td><code>kill -9 PID</code></td><td>Send <code>KILL</code> — immediate, unblockable. <strong>Last resort.</strong></td></tr>
+          <tr><td><code>kill -HUP PID</code></td><td>Reload config (many daemons honor this).</td></tr>
+          <tr><td><code>pkill pattern</code></td><td>Kill by name pattern.</td></tr>
+          <tr><td><code>killall name</code></td><td>Kill all processes with that exact name.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Common signals</h3>
+      <table>
+        <thead><tr><th>Signal</th><th>#</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>TERM</code></td><td>15</td><td>"Please terminate gracefully." Default.</td></tr>
+          <tr><td><code>KILL</code></td><td>9</td><td>"Die immediately." Can't be caught.</td></tr>
+          <tr><td><code>HUP</code></td><td>1</td><td>"Hang up." Often = "reload config."</td></tr>
+          <tr><td><code>INT</code></td><td>2</td><td>What <kbd>Ctrl</kbd>+<kbd>C</kbd> sends.</td></tr>
+          <tr><td><code>STOP</code></td><td>19</td><td>Suspend (can't be caught).</td></tr>
+          <tr><td><code>CONT</code></td><td>18</td><td>Continue a stopped process.</td></tr>
+          <tr><td><code>USR1</code>, <code>USR2</code></td><td>10, 12</td><td>User-defined; apps choose.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Job control</h3>
+      <table>
+        <thead><tr><th>Command</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><code>cmd &amp;</code></td><td>Start in background.</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd></td><td>Suspend current foreground job.</td></tr>
+          <tr><td><code>jobs</code></td><td>List your jobs.</td></tr>
+          <tr><td><code>fg %1</code></td><td>Bring job 1 to foreground.</td></tr>
+          <tr><td><code>bg %1</code></td><td>Continue job 1 in background.</td></tr>
+          <tr><td><code>kill %1</code></td><td>Kill job 1 (note: <code>%1</code> not PID).</td></tr>
+          <tr><td><code>disown %1</code></td><td>Detach a job from this shell.</td></tr>
+          <tr><td><code>nohup CMD &amp;</code></td><td>Run a command immune to hangup.</td></tr>
+        </tbody>
+      </table>
+      <p>For sessions that <em>must</em> survive — long deploys, training jobs — use <strong>tmux</strong> or <strong>screen</strong>.</p>
+
+      <h2 id="walkthrough"><span class="secnum">§4</span>Guided walkthrough</h2>
+<pre data-lang="sh"><code><span class="tok-comment"># inspect</span>
+<span class="tok-prompt">$ </span>ps
+<span class="tok-prompt">$ </span>ps -ef | head -10
+<span class="tok-prompt">$ </span>ps aux | wc -l
+<span class="tok-prompt">$ </span>top                 <span class="tok-comment"># live; q to quit</span>
+
+<span class="tok-comment"># job control</span>
+<span class="tok-prompt">$ </span>sleep 60 &amp;          <span class="tok-comment"># [1] 12345</span>
+<span class="tok-prompt">$ </span>jobs                <span class="tok-comment"># [1]+ Running   sleep 60</span>
+<span class="tok-prompt">$ </span>fg %1               <span class="tok-comment"># bring back; Ctrl+C to kill</span>
+<span class="tok-prompt">$ </span>sleep 30
+<span class="tok-comment"># [Ctrl+Z] suspends — "[1]+ Stopped"</span>
+<span class="tok-prompt">$ </span>bg %1               <span class="tok-comment"># resume in background</span>
+<span class="tok-prompt">$ </span>jobs
+
+<span class="tok-comment"># find and signal</span>
+<span class="tok-prompt">$ </span>sleep 999 &amp;
+<span class="tok-prompt">$ </span>pgrep sleep
+<span class="tok-prompt">$ </span>kill $(pgrep sleep) <span class="tok-comment"># graceful TERM</span>
+<span class="tok-prompt">$ </span>pgrep sleep         <span class="tok-comment"># empty</span></code></pre>
+
+      <h3>nohup vs disown vs tmux</h3>
+      <ul>
+        <li><code>nohup CMD &amp;</code> — runs CMD, redirects output to <code>nohup.out</code>, immune to HUP. Good for fire-and-forget.</li>
+        <li><code>disown</code> — used after the fact: <code>cmd &amp;; disown %1</code> removes from the shell's job table.</li>
+        <li><code>tmux</code> — multiplexed terminal that <em>runs on the server even if you disconnect</em>. Reattach with <code>tmux attach</code>. Standard for any work over 30 seconds.</li>
+      </ul>
+
+      <h2 id="gotchas"><span class="secnum">§5</span>Gotchas</h2>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · <code>kill -9</code> doesn't run cleanup</span>
+        <p>No saved data, no released locks. Try <code>kill</code> (TERM) first, give it a few seconds, then escalate.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · <code>pkill -f</code> matches too much</span>
+        <p><code>pkill nginx</code> is safer than <code>pkill -f api</code> (which matches anywhere in the command line).</p>
+      </div>
+      <div class="callout callout-tip">
+        <span class="callout-label">Tip · the grep-trap</span>
+        <p><code>ps aux | grep nginx</code> matches the <code>grep nginx</code> process itself. Use <code>pgrep</code>, or <code>ps aux | grep '[n]ginx'</code>.</p>
+      </div>
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · zombies aren't running</span>
+        <p>A zombie has <em>exited</em> but its parent hasn't read its exit code. They take no CPU. They <em>do</em> take a PID slot. Fix the parent, not the zombie.</p>
+      </div>
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor habit · before <code>kill -9</code></span>
+        <p>Ask: "what's the cost if this app can't run its cleanup handler?" For nginx, low. For a database, high. For an in-progress git push, possibly catastrophic.</p>
+      </div>
+
+      <h2 id="drills"><span class="secnum">§6</span>On-the-spot exercises</h2>
+
+      <div class="exercise">
+        <p><span class="ex-id">E11.1</span>Show every process owned by your user.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>ps -fU "$USER"</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E11.2</span>How many processes are currently running on this system?</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>ps -e --no-headers | wc -l</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E11.3</span>Find the PID of <code>sshd</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>pgrep -a sshd      <span class="tok-comment"># shows PIDs and the command line</span>
+<span class="tok-prompt">$ </span>pidof sshd</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E11.4</span>Start <code>sleep 100</code> in the background. Confirm with <code>jobs</code>. Bring it to the foreground and kill it with <kbd>Ctrl</kbd>+<kbd>C</kbd>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sleep 100 &amp;
+<span class="tok-prompt">$ </span>jobs
+<span class="tok-prompt">$ </span>fg %1               <span class="tok-comment"># Ctrl+C to terminate</span></code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E11.5</span>In <code>top</code>, sort by memory instead of CPU.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+          <p>Inside <code>top</code>: press <kbd>M</kbd>. Press <kbd>P</kbd> to return to CPU sort. <kbd>q</kbd> to quit.</p>
+          <p><code>htop</code> uses F6 to choose the sort field.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E11.6</span>A misbehaving script is at PID 4242. Try graceful termination; force-kill only if that fails.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>kill 4242          <span class="tok-comment"># default TERM</span>
+<span class="tok-prompt">$ </span>ps -p 4242         <span class="tok-comment"># if still there:</span>
+<span class="tok-prompt">$ </span>kill -9 4242       <span class="tok-comment"># force kill</span></code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E11.7</span>Display a process tree.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>pstree -p
+<span class="tok-prompt">$ </span>ps -e --forest</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E11.8</span>Run <code>tail -f /var/log/syslog</code> so it <em>survives</em> you logging out.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>nohup tail -f /var/log/syslog &gt; /tmp/syslog-tail.log 2&gt;&amp;1 &amp;
+<span class="tok-prompt">$ </span>disown</code></pre>
+          <p>Or use tmux:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>tmux new -s logwatch
+<span class="tok-prompt">$ </span>tail -f /var/log/syslog
+<span class="tok-comment"># Ctrl-b d  → detach (session keeps running)</span>
+<span class="tok-comment"># tmux attach -t logwatch  → reattach later</span></code></pre>
+          <p>tmux is the better pattern for anything you'll want to look at again.</p>
+        </div></details>
+      </div>
+
+      <h2 id="scenario"><span class="secnum">§7</span>Real-world sysadmin scenario</h2>
+      <p><strong>Box is at 100% CPU; no obvious culprit.</strong> You SSH in:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>uptime
+<span class="tok-prompt">$ </span>top -bn1 | head -20</code></pre>
+      <p><code>top</code> shows <code>mysqld</code> at 380% CPU. <em>That</em> needs a deeper look:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>pgrep -a mysqld
+<span class="tok-prompt">$ </span>ps -o pid,user,%cpu,%mem,start,etime,cmd -p 12345
+<span class="tok-prompt">$ </span>ls -l /proc/12345/cwd
+<span class="tok-prompt">$ </span>cat /proc/12345/status | head -20</code></pre>
+      <p>Evidence before action. A bad query is hammering MySQL — fix is in the DB, not the kill. <code>kill -9</code> would lose in-flight transactions and watch the problem return on the next query.</p>
+      <p>For stuck services: <code>systemctl restart mysql</code> goes through the unit's shutdown sequence. We meet systemd in module 17.</p>
+
+      <h2 id="recap"><span class="secnum">§8</span>What to remember</h2>
+      <ul>
+        <li>Every process has a PID and a parent. <code>pstree</code> and <code>ps --forest</code> show the family tree.</li>
+        <li>Default kill is <code>TERM</code> (graceful). <code>-9 KILL</code> is last resort.</li>
+        <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> suspends, <code>fg</code>/<code>bg</code> resumes, <code>&amp;</code> backgrounds.</li>
+        <li>For long jobs that must survive your shell: <code>nohup</code> or <strong>tmux</strong>.</li>
+        <li><code>top</code> / <code>htop</code> first; <code>ps</code> for snapshots; <code>pgrep</code>/<code>pkill</code> for name matches.</li>
+        <li>Zombies are dead; fixing the parent is the fix.</li>
+      </ul>
+
+      <a class="next-card" href="12-text-toolbox.html">
+        <span class="label">NEXT · MODULE 12</span>
+        <span class="title">Text-processing toolbox</span>
+        <span class="desc">cut, sort, uniq, tr, paste, comm, diff — composable filters.</span>
+      </a>
+    </article>
+
+    <footer class="colophon">
+      <p>NCS 205 handbook · module 11 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
+    </footer>
+  </main>
+
+  <aside class="toc" aria-label="On this page">
+    <div class="toc-title">On this page</div>
+    <ul>
+      <li><a href="#why">§1 Why this matters</a></li>
+      <li><a href="#mental-model">§2 Mental model</a></li>
+      <li><a href="#commands">§3 Core commands</a></li>
+      <li><a href="#walkthrough">§4 Walkthrough</a></li>
+      <li><a href="#gotchas">§5 Gotchas</a></li>
+      <li><a href="#drills">§6 Exercises</a></li>
+      <li><a href="#scenario">§7 Scenario</a></li>
+      <li><a href="#recap">§8 What to remember</a></li>
+    </ul>
+  </aside>
+</div>
+
+<script src="assets/site.js"></script>
+</body>
+</html>

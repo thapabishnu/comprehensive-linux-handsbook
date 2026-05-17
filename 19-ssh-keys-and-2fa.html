@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>19 · SSH keys &amp; 2FA — Mentor's Guide to Linux</title>
+<meta name="description" content="Passwordless SSH with keys + Google Authenticator 2FA — the modern minimum for any server you care about." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="brand">
+    <a href="index.html" style="border:none; color: inherit; display: contents;">
+      <span class="mark">/&gt;</span>
+      <span>The Mentor's Guide to Linux</span>
+    </a>
+    <span class="sub">NCS 205 handbook</span>
+  </div>
+  <div class="right">
+    <span class="crumbs"><a href="index.html" style="color: inherit; border: none;">HOME</a> / <strong>MODULE 19</strong></span>
+    <button class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+      <span class="icon">☼</span><span class="label">PAPER</span>
+    </button>
+    <button class="menu-btn" aria-label="Open table of contents" aria-expanded="false">MENU</button>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="sidebar" id="sidebar" aria-label="Module navigation"></aside>
+
+  <main class="main" id="main">
+    <article class="module">
+      <div class="meta-row">
+        <span><span class="label">MODULE</span>19</span>
+        <span><span class="label">MAPS TO</span>LABS 62–64</span>
+        <span><span class="label">TIME</span>~35 min</span>
+      </div>
+
+      <h1>SSH keys and 2FA</h1>
+      <p class="lede">Keys solve guessability; 2FA solves the "key got stolen" problem. The modern minimum.</p>
+
+      <h2 id="why"><span class="secnum">§1</span>Why this matters</h2>
+      <p>Passwords on SSH are weak — guessable, phishable, shared across machines. Keys solve guessability; 2FA solves the "key got stolen" problem.</p>
+
+      <h2 id="mental-model"><span class="secnum">§2</span>Mental model</h2>
+      <p><strong>Public-key authentication</strong>: you have a <em>private</em> key (a long secret on your laptop) and a <em>public</em> key (safe to share). The server stores your public key in <code>~/.ssh/authorized_keys</code>. The private key never leaves your laptop.</p>
+      <p><strong>2FA</strong> layers a time-based one-time password (TOTP). After your key proves "what you have," TOTP proves "what you also have right now."</p>
+<pre data-lang="diagram" data-nocopy="true"><code>        ┌── factor 1: SSH key on laptop        ──┐
+        │                                        ├──► access
+        └── factor 2: TOTP code from phone (30s) ─┘</code></pre>
+
+      <h2 id="commands"><span class="secnum">§3</span>Core commands</h2>
+
+      <h3>Keys</h3>
+      <table>
+        <thead><tr><th>Command</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><code>ssh-keygen -t ed25519 -C "you@laptop"</code></td><td>Generate a modern keypair</td></tr>
+          <tr><td><code>ssh-keygen -t rsa -b 4096 -C "you@laptop"</code></td><td>Older but universal</td></tr>
+          <tr><td><code>ssh-keygen -p</code></td><td>Change passphrase on an existing key</td></tr>
+          <tr><td><code>ssh-keygen -l -f ~/.ssh/id_ed25519</code></td><td>Show key fingerprint</td></tr>
+          <tr><td><code>ssh-copy-id user@host</code></td><td>Install your public key on the server</td></tr>
+          <tr><td><code>cat ~/.ssh/id_ed25519.pub</code></td><td>Print your public key (safe to share)</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Agent</h3>
+      <table>
+        <thead><tr><th>Command</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><code>eval "$(ssh-agent -s)"</code></td><td>Start the agent</td></tr>
+          <tr><td><code>ssh-add ~/.ssh/id_ed25519</code></td><td>Load the key</td></tr>
+          <tr><td><code>ssh-add -l</code></td><td>List loaded keys</td></tr>
+          <tr><td><code>ssh-add -D</code></td><td>Drop all keys</td></tr>
+        </tbody>
+      </table>
+
+      <h3>SSH client config</h3>
+      <p><code>~/.ssh/config</code> lets you save per-host aliases:</p>
+<pre data-lang="ssh-config"><code>Host prod-web
+  HostName web-01.example.com
+  User deploy
+  Port 22
+  IdentityFile ~/.ssh/id_ed25519
+  ForwardAgent no
+
+Host *
+  ServerAliveInterval 60
+  ServerAliveCountMax 3</code></pre>
+      <p>Then <code>ssh prod-web</code> is enough.</p>
+
+      <h2 id="walkthrough"><span class="secnum">§4</span>Guided walkthrough — passwordless login</h2>
+<pre data-lang="sh"><code><span class="tok-comment"># 1. Generate a key</span>
+<span class="tok-prompt">$ </span>ssh-keygen -t ed25519 -C "you@$(hostname)"
+<span class="tok-comment"># accept default path; choose a passphrase</span>
+
+<span class="tok-comment"># 2. View the public key</span>
+<span class="tok-prompt">$ </span>cat ~/.ssh/id_ed25519.pub
+
+<span class="tok-comment"># 3. Install on the remote</span>
+<span class="tok-prompt">$ </span>ssh-copy-id you@remote-host
+
+<span class="tok-comment"># 4. Verify</span>
+<span class="tok-prompt">$ </span>ssh you@remote-host
+<span class="tok-comment"># should not prompt for password</span>
+
+<span class="tok-comment"># 5. Permissions sanity check (on remote)</span>
+<span class="tok-prompt">$ </span>ls -ld ~/.ssh ~/.ssh/authorized_keys
+<span class="tok-comment"># expect:</span>
+<span class="tok-comment"># drwx------  ~/.ssh</span>
+<span class="tok-comment"># -rw-------  ~/.ssh/authorized_keys</span></code></pre>
+
+      <p>If permissions are wrong, OpenSSH silently refuses to use the key.</p>
+
+      <h3>Loading into ssh-agent</h3>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>eval "$(ssh-agent -s)"
+<span class="tok-prompt">$ </span>ssh-add ~/.ssh/id_ed25519     <span class="tok-comment"># asks passphrase</span>
+<span class="tok-prompt">$ </span>ssh-add -l                     <span class="tok-comment"># see it loaded</span>
+<span class="tok-prompt">$ </span>ssh you@remote                 <span class="tok-comment"># no passphrase prompt now</span></code></pre>
+
+      <h2 id="2fa"><span class="secnum">§5</span>Adding Google Authenticator 2FA</h2>
+      <p>Debian/Ubuntu:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo apt install -y libpam-google-authenticator
+<span class="tok-prompt">$ </span>google-authenticator
+<span class="tok-comment"># answer: y to time-based, y to update file, y to disallow reuse</span>
+<span class="tok-comment"># scan QR with Google Authenticator app; SAVE the emergency codes</span></code></pre>
+
+      <p>Edit PAM config:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo vi /etc/pam.d/sshd</code></pre>
+      <p>Add at the top:</p>
+<pre data-lang="pam" data-nocopy="true"><code>auth required pam_google_authenticator.so</code></pre>
+
+      <p>Edit SSH server config:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo vi /etc/ssh/sshd_config</code></pre>
+      <p>Set:</p>
+<pre data-lang="ssh-config" data-nocopy="true"><code>ChallengeResponseAuthentication yes
+UsePAM yes
+AuthenticationMethods publickey,keyboard-interactive</code></pre>
+      <p>That requires <strong>both</strong> the SSH key AND the TOTP code.</p>
+
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Mentor caution · open a second session first</span>
+        <p>Open a <em>second</em> SSH session before restarting <code>sshd</code> — if you've miswritten the config, the first session stays alive while you fix it. A locked-out box is a very long Saturday.</p>
+      </div>
+
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo systemctl restart ssh</code></pre>
+
+      <h2 id="gotchas"><span class="secnum">§6</span>Gotchas</h2>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · permissions matter</span>
+        <p><code>~/.ssh</code> = 700, <code>authorized_keys</code> = 600, private key = 600. Or OpenSSH refuses.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · never share the private key</span>
+        <p>Share <code>id_ed25519.pub</code>. The one without <code>.pub</code> stays on your laptop.</p>
+      </div>
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · passphrase your key</span>
+        <p>"But I'd rather not type it" — that's what <code>ssh-agent</code> is for. An unpassphrased key is a single point of failure.</p>
+      </div>
+      <div class="callout callout-tip">
+        <span class="callout-label">Tip · disable password auth after keys work</span>
+        <p>Set <code>PasswordAuthentication no</code> in <code>/etc/ssh/sshd_config</code>. Test before logging out.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · time skew breaks 2FA</span>
+        <p>TOTP codes are 30-second windows. If the server's clock drifts, codes fail. <code>timedatectl status</code> should show "NTP synchronized: yes."</p>
+      </div>
+
+      <h2 id="drills"><span class="secnum">§7</span>On-the-spot exercises</h2>
+
+      <div class="exercise">
+        <p><span class="ex-id">E19.1</span>Generate a new SSH key called <code>~/.ssh/id_test_ed25519</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>ssh-keygen -t ed25519 -f ~/.ssh/id_test_ed25519 -C "test"</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E19.2</span>Show the fingerprint of your default key.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>ssh-keygen -l -f ~/.ssh/id_ed25519</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E19.3</span>Print the public portion of your default key.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cat ~/.ssh/id_ed25519.pub</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E19.4</span>Install your public key on <code>localhost</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>ssh-copy-id "$USER@localhost"
+<span class="tok-prompt">$ </span>ssh "$USER@localhost" whoami</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E19.5</span>Load your key into the agent, list, then remove it.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>eval "$(ssh-agent -s)"
+<span class="tok-prompt">$ </span>ssh-add ~/.ssh/id_ed25519
+<span class="tok-prompt">$ </span>ssh-add -l
+<span class="tok-prompt">$ </span>ssh-add -d ~/.ssh/id_ed25519</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E19.6</span>Write a <code>~/.ssh/config</code> entry so <code>ssh box</code> works with custom port/user/key.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>mkdir -p ~/.ssh &amp;&amp; chmod 700 ~/.ssh
+<span class="tok-prompt">$ </span>cat &gt;&gt; ~/.ssh/config &lt;&lt;'EOF'
+Host box
+  HostName 192.168.1.50
+  Port 2222
+  User admin
+  IdentityFile ~/.ssh/id_box
+EOF
+<span class="tok-prompt">$ </span>chmod 600 ~/.ssh/config</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E19.7</span>Disable password authentication on a server (after confirming keys work).</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-comment"># keep a second session open</span>
+<span class="tok-prompt">$ </span>sudo sed -i.bak 's/^#\?PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config
+<span class="tok-prompt">$ </span>sudo sshd -t
+<span class="tok-prompt">$ </span>sudo systemctl reload ssh</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E19.8</span>Set up 2FA for your account using Google Authenticator.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+          <p>Follow §5 step-by-step. Test in a new shell while keeping the original logged in.</p>
+        </div></details>
+      </div>
+
+      <h2 id="scenario"><span class="secnum">§8</span>Real-world sysadmin scenario</h2>
+      <p><strong>You inherited a fleet of 30 servers</strong> that still use password SSH:</p>
+<pre data-lang="sh"><code><span class="tok-comment"># 1. Generate one strong key</span>
+<span class="tok-prompt">$ </span>ssh-keygen -t ed25519 -C "you@$(hostname)"
+
+<span class="tok-comment"># 2. Get the public key onto every box</span>
+<span class="tok-prompt">$ </span>for host in $(cat hosts.txt); do
+&gt;   ssh-copy-id you@"$host"
+&gt; done
+
+<span class="tok-comment"># 3. Verify</span>
+<span class="tok-prompt">$ </span>for host in $(cat hosts.txt); do
+&gt;   ssh -o BatchMode=yes -o StrictHostKeyChecking=no you@"$host" hostname 2&gt;/dev/null \
+&gt;     || echo "FAIL: $host"
+&gt; done
+
+<span class="tok-comment"># 4. Once all green, disable password SSH</span>
+<span class="tok-prompt">$ </span>for host in $(cat hosts.txt); do
+&gt;   ssh you@"$host" "
+&gt;     sudo sed -i.bak 's/^#\?PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config &amp;&amp;
+&gt;     sudo sshd -t &amp;&amp;
+&gt;     sudo systemctl reload ssh
+&gt;   "
+&gt; done</code></pre>
+      <p>For the very sensitive servers, layer 2FA on top.</p>
+
+      <h2 id="recap"><span class="secnum">§9</span>What to remember</h2>
+      <ul>
+        <li>Public key on the server; private key on your laptop only.</li>
+        <li>Permissions: <code>~/.ssh</code> = 700, files = 600. Or OpenSSH refuses.</li>
+        <li>Passphrase your key. Use <code>ssh-agent</code>.</li>
+        <li><code>~/.ssh/config</code> saves you from typing hostnames and flags.</li>
+        <li>2FA via Google Authenticator + PAM + <code>AuthenticationMethods publickey,keyboard-interactive</code>.</li>
+        <li>Always keep a second SSH session open when changing <code>sshd</code> config.</li>
+      </ul>
+
+      <a class="next-card" href="20-git-basics.html">
+        <span class="label">NEXT · MODULE 20</span>
+        <span class="title">git for sysadmins</span>
+        <span class="desc">Version-control configs and scripts.</span>
+      </a>
+    </article>
+
+    <footer class="colophon">
+      <p>NCS 205 handbook · module 19 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
+    </footer>
+  </main>
+
+  <aside class="toc" aria-label="On this page">
+    <div class="toc-title">On this page</div>
+    <ul>
+      <li><a href="#why">§1 Why this matters</a></li>
+      <li><a href="#mental-model">§2 Mental model</a></li>
+      <li><a href="#commands">§3 Core commands</a></li>
+      <li><a href="#walkthrough">§4 Walkthrough</a></li>
+      <li><a href="#2fa">§5 Google Auth 2FA</a></li>
+      <li><a href="#gotchas">§6 Gotchas</a></li>
+      <li><a href="#drills">§7 Exercises</a></li>
+      <li><a href="#scenario">§8 Scenario</a></li>
+      <li><a href="#recap">§9 What to remember</a></li>
+    </ul>
+  </aside>
+</div>
+
+<script src="assets/site.js"></script>
+</body>
+</html>

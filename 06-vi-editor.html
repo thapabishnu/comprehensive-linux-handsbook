@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>06 · vi / vim — Mentor's Guide to Linux</title>
+<meta name="description" content="The modal editor on every Linux box. Survival kit, motion grammar, search/replace, and the muscle memory that turns vi into your fastest editor." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="brand">
+    <a href="index.html" style="border:none; color: inherit; display: contents;">
+      <span class="mark">/&gt;</span>
+      <span>The Mentor's Guide to Linux</span>
+    </a>
+    <span class="sub">NCS 205 handbook</span>
+  </div>
+  <div class="right">
+    <span class="crumbs"><a href="index.html" style="color: inherit; border: none;">HOME</a> / <strong>MODULE 06</strong></span>
+    <button class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+      <span class="icon">☼</span><span class="label">PAPER</span>
+    </button>
+    <button class="menu-btn" aria-label="Open table of contents" aria-expanded="false">MENU</button>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="sidebar" id="sidebar" aria-label="Module navigation"></aside>
+
+  <main class="main" id="main">
+    <article class="module">
+      <div class="meta-row">
+        <span><span class="label">MODULE</span>06</span>
+        <span><span class="label">MAPS TO</span>LABS 14–15</span>
+        <span><span class="label">TIME</span>~45 min</span>
+      </div>
+
+      <h1>The vi / vim editor</h1>
+      <p class="lede">Every Linux box has vi. Not "almost every." <strong>Every.</strong> Five minutes of learning gets you "save and quit"; two hours gets you faster than any GUI editor.</p>
+
+      <h2 id="why"><span class="secnum">§1</span>Why this matters</h2>
+      <p>You will SSH into a stripped-down container or a rescue boot environment where <code>nano</code> doesn't exist, and <code>vi</code> will be your only editor. Even when you have nicer options, <code>vi</code>'s modal model is so efficient that millions of professionals keep using it daily.</p>
+
+      <h2 id="mental-model"><span class="secnum">§2</span>Mental model</h2>
+      <p><code>vi</code> is <strong>modal</strong>. Every keypress means different things depending on which mode you're in:</p>
+
+<pre data-lang="diagram" data-nocopy="true"><code>                ┌──────────────┐
+       Esc      │   NORMAL     │  i / a / o / I / A / O
+   ┌──────────► │  (default)   ├────────────────────────────┐
+   │            │ — moves &amp;    │                            │
+   │            │   commands   │                            ▼
+   │            └──────┬───────┘                    ┌──────────────┐
+   │                   │                            │   INSERT     │
+   │                   │ :                          │  (typing)    │
+   │                   ▼                            └──────────────┘
+   │            ┌──────────────┐
+   │            │  COMMAND-LINE│      Enter
+   │            │      :       │
+   └──────────  │ (save, quit, │
+                │  search)     │
+                └──────────────┘</code></pre>
+
+      <ul>
+        <li><strong>Normal mode</strong> (default) — keys are commands. <code>j</code> moves down, <code>dd</code> deletes a line.</li>
+        <li><strong>Insert mode</strong> — keys insert text. <code>i</code> to enter, <kbd>Esc</kbd> to leave.</li>
+        <li><strong>Command-line mode</strong> — <code>:</code> followed by an ex command. <code>:w</code> save, <code>:q</code> quit, <code>:s/foo/bar/g</code> substitute.</li>
+      </ul>
+      <p>The reason vi feels alien is that you're not "typing into a document." You're issuing commands to a tiny programming language <em>whose only data is the buffer</em>.</p>
+
+      <h2 id="survival"><span class="secnum">§3</span>The survival kit</h2>
+      <p>If you remember nothing else, remember these:</p>
+      <table>
+        <thead><tr><th>To do this</th><th>Press</th></tr></thead>
+        <tbody>
+          <tr><td>Open a file</td><td><code>vi filename</code></td></tr>
+          <tr><td>Enter insert mode</td><td><kbd>i</kbd></td></tr>
+          <tr><td>Leave insert mode</td><td><kbd>Esc</kbd></td></tr>
+          <tr><td>Save</td><td><code>:w</code> <kbd>Enter</kbd></td></tr>
+          <tr><td>Quit</td><td><code>:q</code> <kbd>Enter</kbd></td></tr>
+          <tr><td>Save &amp; quit</td><td><code>:wq</code> <kbd>Enter</kbd></td></tr>
+          <tr><td>Quit <em>without saving</em></td><td><code>:q!</code> <kbd>Enter</kbd></td></tr>
+          <tr><td>Undo</td><td><kbd>u</kbd></td></tr>
+          <tr><td>Redo</td><td><kbd>Ctrl</kbd>+<kbd>R</kbd></td></tr>
+        </tbody>
+      </table>
+      <p>That's enough to never be stranded.</p>
+
+      <h2 id="commands"><span class="secnum">§4</span>Commands by category</h2>
+
+      <h3>Movement (Normal mode)</h3>
+      <table>
+        <thead><tr><th>Keys</th><th>Move</th></tr></thead>
+        <tbody>
+          <tr><td><kbd>h</kbd> <kbd>j</kbd> <kbd>k</kbd> <kbd>l</kbd></td><td>Left, down, up, right (arrows work, but break the flow)</td></tr>
+          <tr><td><kbd>w</kbd> / <kbd>b</kbd></td><td>Forward / back one word</td></tr>
+          <tr><td><kbd>0</kbd> / <kbd>^</kbd></td><td>Beginning of line (<code>0</code> = column 0; <code>^</code> = first non-blank)</td></tr>
+          <tr><td><kbd>$</kbd></td><td>End of line</td></tr>
+          <tr><td><kbd>gg</kbd> / <kbd>G</kbd></td><td>Top / bottom of file</td></tr>
+          <tr><td><code>:N</code></td><td>Jump to line N (e.g. <code>:42</code>)</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>f</kbd> / <kbd>Ctrl</kbd>+<kbd>b</kbd></td><td>Page down / up</td></tr>
+          <tr><td><kbd>%</kbd></td><td>Jump to matching bracket/paren</td></tr>
+          <tr><td><kbd>*</kbd></td><td>Search forward for word under cursor</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Editing (Normal mode)</h3>
+      <table>
+        <thead><tr><th>Keys</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><kbd>i</kbd> / <kbd>a</kbd></td><td>Insert before / after cursor</td></tr>
+          <tr><td><kbd>I</kbd> / <kbd>A</kbd></td><td>Insert at beginning / end of line</td></tr>
+          <tr><td><kbd>o</kbd> / <kbd>O</kbd></td><td>Open new line below / above</td></tr>
+          <tr><td><kbd>x</kbd></td><td>Delete character under cursor</td></tr>
+          <tr><td><kbd>dd</kbd></td><td>Delete current line (and yank it)</td></tr>
+          <tr><td><kbd>dw</kbd></td><td>Delete from cursor to end of word</td></tr>
+          <tr><td><kbd>d$</kbd> / <kbd>D</kbd></td><td>Delete to end of line</td></tr>
+          <tr><td><kbd>yy</kbd></td><td>Yank (copy) current line</td></tr>
+          <tr><td><kbd>p</kbd> / <kbd>P</kbd></td><td>Paste after / before cursor</td></tr>
+          <tr><td><kbd>r</kbd>&lt;char&gt;</td><td>Replace one character</td></tr>
+          <tr><td><kbd>cw</kbd></td><td>Change word (delete + enter insert)</td></tr>
+          <tr><td><kbd>cc</kbd></td><td>Change whole line</td></tr>
+          <tr><td><kbd>u</kbd> / <kbd>Ctrl</kbd>+<kbd>R</kbd></td><td>Undo / redo</td></tr>
+          <tr><td><kbd>.</kbd></td><td><strong>Repeat last edit</strong> — incredibly powerful</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Search &amp; replace (Command-line mode)</h3>
+      <table>
+        <thead><tr><th>Command</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><code>/foo</code></td><td>Search forward. <kbd>n</kbd> next, <kbd>N</kbd> previous.</td></tr>
+          <tr><td><code>?foo</code></td><td>Search backward.</td></tr>
+          <tr><td><code>:%s/foo/bar/g</code></td><td>Replace every <code>foo</code> with <code>bar</code> in the file.</td></tr>
+          <tr><td><code>:%s/foo/bar/gc</code></td><td>Same, but <strong>confirm</strong> each replacement.</td></tr>
+          <tr><td><code>:5,20s/foo/bar/g</code></td><td>Only between lines 5 and 20.</td></tr>
+          <tr><td><code>:noh</code></td><td>Clear search highlight.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>File / window commands</h3>
+      <table>
+        <thead><tr><th>Command</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><code>:w</code></td><td>Write (save).</td></tr>
+          <tr><td><code>:w newname</code></td><td>Save <em>as</em>.</td></tr>
+          <tr><td><code>:q</code></td><td>Quit. Errors if buffer is modified.</td></tr>
+          <tr><td><code>:q!</code></td><td>Quit, discard changes.</td></tr>
+          <tr><td><code>:wq</code> or <kbd>ZZ</kbd></td><td>Write and quit.</td></tr>
+          <tr><td><code>:e other.txt</code></td><td>Open another file in this window.</td></tr>
+          <tr><td><code>:sp</code> / <code>:vsp</code></td><td>Split horizontally / vertically.</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>W</kbd> <kbd>h/j/k/l</kbd></td><td>Move between splits.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>The grammar</h3>
+      <p>Most edit commands follow <code>[count] operator motion</code>:</p>
+      <ul>
+        <li><code>5dd</code> — delete 5 lines.</li>
+        <li><code>d3w</code> — delete 3 words.</li>
+        <li><code>y$</code> — yank to end of line.</li>
+        <li><code>2cc</code> — change 2 lines.</li>
+      </ul>
+      <p>Memorize the <strong>operators</strong> (<code>d</code>, <code>y</code>, <code>c</code>) and the <strong>motions</strong> (<code>w</code>, <code>$</code>, <code>gg</code>), and you can compose dozens of commands.</p>
+
+      <h2 id="walkthrough"><span class="secnum">§5</span>Guided walkthrough</h2>
+      <p>Open a scratch file:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>vi ~/vi-practice.txt</code></pre>
+      <p>You're in Normal mode. Type these in order:</p>
+<pre data-lang="vi" data-nocopy="true"><code>i                   ← enter insert mode
+The quick brown fox
+jumps over the lazy dog
+[Esc]               ← back to Normal
+gg                  ← top of file
+yy                  ← yank (copy) the first line
+p                   ← paste below — now there are 3 lines
+:                   ← command-line mode
+%s/fox/cat/g        ← every "fox" becomes "cat"
+[Enter]
+u                   ← undo (cat → fox)
+Ctrl+R              ← redo
+:w                  ← save
+:q                  ← quit</code></pre>
+      <p>You just edited a file using nothing but <code>vi</code>. That's the survival kit <em>plus</em> a substitution, an undo, and a yank-paste.</p>
+
+      <h3>A more practical drill</h3>
+      <p>Edit <code>/etc/hosts</code> (read-only first — we'll undo any change):</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo vi /etc/hosts</code></pre>
+      <p>Inside:</p>
+      <ul>
+        <li><code>gg</code> — top of file</li>
+        <li><code>/127</code> — find the first <code>127.</code></li>
+        <li><code>n</code> — next match</li>
+        <li><code>:q!</code> — quit without saving</li>
+      </ul>
+
+      <h2 id="gotchas"><span class="secnum">§6</span>Gotchas</h2>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · Caps-Lock is your enemy</span>
+        <p><code>J</code> joins lines; <code>K</code> opens the man page. Many of vi's "weird" behaviors are you accidentally in caps.</p>
+      </div>
+      <div class="callout callout-tip">
+        <span class="callout-label">Tip · when in doubt, Esc</span>
+        <p>Press <kbd>Esc</kbd>. Twice if you're really lost.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · <code>:q</code> refuses on unsaved changes</span>
+        <p>Use <code>:q!</code> to discard, or <code>:wq</code> to save first.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · <kbd>Ctrl</kbd>+<kbd>S</kbd> freezes your terminal</span>
+        <p>XOFF. Press <kbd>Ctrl</kbd>+<kbd>Q</kbd> to unfreeze. (Old TTY thing — vi inherited it.)</p>
+      </div>
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · <code>.</code> repeats the last edit</span>
+        <p>Not the last motion. After <code>dw</code>, pressing <kbd>.</kbd> deletes another word. The day <kbd>.</kbd> clicks for you is the day vi becomes <em>fun</em>.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · <code>:set paste</code> before pasting</span>
+        <p>Otherwise vim's auto-indent rewrites your text into a mess. <code>:set nopaste</code> after.</p>
+      </div>
+
+      <h2 id="drills"><span class="secnum">§7</span>On-the-spot exercises</h2>
+
+      <div class="exercise">
+        <p><span class="ex-id">E6.1</span>Open <code>~/vi-practice.txt</code> (create it if needed), type three lines of text, save, and quit.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="vi" data-nocopy="true"><code>vi ~/vi-practice.txt        ← opens
+i                           ← insert mode
+line one
+line two
+line three
+[Esc]
+:wq                         ← write + quit</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E6.2</span>Re-open the file. Move to line 2. Delete it. Save.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="vi" data-nocopy="true"><code>vi ~/vi-practice.txt
+:2          ← jump to line 2
+dd          ← delete the line
+:w          ← save</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E6.3</span>In the same file, replace every occurrence of "line" with "row".</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="vi" data-nocopy="true"><code>:%s/line/row/g</code></pre>
+          <p><code>%</code> = "all lines in the file." <code>g</code> = "every occurrence on each line" (without <code>g</code>, only the first per line).</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E6.4</span>Undo the substitution.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="vi" data-nocopy="true"><code>u</code></pre>
+          <p>Press <kbd>Ctrl</kbd>+<kbd>R</kbd> to redo.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E6.5</span>Yank the first line, paste it three times at the end of the file.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="vi" data-nocopy="true"><code>gg          ← top
+yy          ← yank line 1
+G           ← bottom
+p           ← paste below current line
+p
+p</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E6.6</span>Search for "row" and jump through every match. Quit without saving.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="vi" data-nocopy="true"><code>/row[Enter]
+n           ← next match
+n           ← next
+:q!         ← quit, discard</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E6.7</span>Open <code>/etc/hosts</code> in read-only mode.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>view /etc/hosts</code></pre>
+          <p>Equivalent to <code>vi -R /etc/hosts</code>. The <code>:q</code> works as normal; the file is marked read-only.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E6.8</span>In <code>~/vi-practice.txt</code>, indent every line by 4 spaces. (Hint: visual mode <kbd>V</kbd> + <kbd>&gt;</kbd>.)</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+          <p>Several routes. Simplest with visual line mode:</p>
+<pre data-lang="vi" data-nocopy="true"><code>gg          ← top
+V           ← visual line mode
+G           ← extend to bottom
+>           ← shift right (indent) one shiftwidth
+:set shiftwidth=4   ← if not already 4</code></pre>
+          <p>Or with a substitution:</p>
+<pre data-lang="vi" data-nocopy="true"><code>:%s/^/    /</code></pre>
+        </div></details>
+      </div>
+
+      <h2 id="scenario"><span class="secnum">§8</span>Real-world sysadmin scenario</h2>
+      <p><strong>Production push goes wrong.</strong> A coworker SSHs you screen-share: <em>"Can you change the timeout in this nginx config?"</em> You have one <code>vi</code> window, a flaky connection, and no time to learn.</p>
+      <p>You do this:</p>
+<pre data-lang="vi" data-nocopy="true"><code>vi /etc/nginx/conf.d/api.conf      ← open
+/proxy_read_timeout                ← search for the line
+n                                  ← skip to the right occurrence
+$                                  ← end of line
+cw                                 ← change word (the value)
+60s[Esc]                           ← type new value, leave insert
+:w                                 ← save
+:q                                 ← quit</code></pre>
+      <p>Then back in shell:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo nginx -t          <span class="tok-comment"># validate syntax</span>
+<span class="tok-prompt">$ </span>sudo systemctl reload nginx</code></pre>
+      <p>If syntax check fails, you go right back to vi, fix the typo, save, validate, reload. <strong>The whole loop runs entirely in your terminal.</strong> No mouse, no window switching. This is the loop you'll run hundreds of times in your career. Make <code>vi</code> cheap.</p>
+
+      <h2 id="recap"><span class="secnum">§9</span>What to remember</h2>
+      <ul>
+        <li>Vi is <strong>modal</strong>. Normal = commands, Insert = typing, Command-line = <code>:</code>.</li>
+        <li>Survival kit: <code>i</code>, <kbd>Esc</kbd>, <code>:w</code>, <code>:q</code>, <code>:wq</code>, <code>:q!</code>, <code>u</code>, <kbd>Ctrl</kbd>+<kbd>R</kbd>.</li>
+        <li>Editing grammar: <code>[count] operator motion</code>.</li>
+        <li><kbd>.</kbd> repeats the last edit — the secret weapon.</li>
+        <li><code>view</code> opens read-only. Use it when you only mean to look.</li>
+      </ul>
+      <p>A printable companion: see <a href="reference/cheatsheet-vi.html">vi cheatsheet</a>.</p>
+
+      <a class="next-card" href="07-permissions.html">
+        <span class="label">NEXT · MODULE 07</span>
+        <span class="title">Permissions</span>
+        <span class="desc">rwx, octal, ownership, setuid, and the bits that quietly run the system.</span>
+      </a>
+    </article>
+
+    <footer class="colophon">
+      <p>NCS 205 handbook · module 06 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
+    </footer>
+  </main>
+
+  <aside class="toc" aria-label="On this page">
+    <div class="toc-title">On this page</div>
+    <ul>
+      <li><a href="#why">§1 Why this matters</a></li>
+      <li><a href="#mental-model">§2 Mental model</a></li>
+      <li><a href="#survival">§3 Survival kit</a></li>
+      <li><a href="#commands">§4 Commands</a></li>
+      <li><a href="#walkthrough">§5 Walkthrough</a></li>
+      <li><a href="#gotchas">§6 Gotchas</a></li>
+      <li><a href="#drills">§7 Exercises</a></li>
+      <li><a href="#scenario">§8 Scenario</a></li>
+      <li><a href="#recap">§9 What to remember</a></li>
+    </ul>
+  </aside>
+</div>
+
+<script src="assets/site.js"></script>
+</body>
+</html>

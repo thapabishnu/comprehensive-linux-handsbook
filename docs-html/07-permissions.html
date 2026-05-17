@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>07 · Permissions — Mentor's Guide to Linux</title>
+<meta name="description" content="rwx, octal, ownership, umask, setuid/setgid/sticky — the bits that quietly run the system." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="brand">
+    <a href="index.html" style="border:none; color: inherit; display: contents;">
+      <span class="mark">/&gt;</span>
+      <span>The Mentor's Guide to Linux</span>
+    </a>
+    <span class="sub">NCS 205 handbook</span>
+  </div>
+  <div class="right">
+    <span class="crumbs"><a href="index.html" style="color: inherit; border: none;">HOME</a> / <strong>MODULE 07</strong></span>
+    <button class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+      <span class="icon">☼</span><span class="label">PAPER</span>
+    </button>
+    <button class="menu-btn" aria-label="Open table of contents" aria-expanded="false">MENU</button>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="sidebar" id="sidebar" aria-label="Module navigation"></aside>
+
+  <main class="main" id="main">
+    <article class="module">
+      <div class="meta-row">
+        <span><span class="label">MODULE</span>07</span>
+        <span><span class="label">MAPS TO</span>LABS 16–18</span>
+        <span><span class="label">TIME</span>~35 min</span>
+      </div>
+
+      <h1>Permissions</h1>
+      <p class="lede">Linux permissions are the difference between "I can read this" and "I can pwn this." Every breach you'll ever read about mentions a file that was too permissive.</p>
+
+      <h2 id="why"><span class="secnum">§1</span>Why this matters</h2>
+      <p>Every "why can't I run this?" support ticket boils down to the same nine bits. Master <code>rwx</code> and you control who does what on your machine.</p>
+
+      <h2 id="mental-model"><span class="secnum">§2</span>Mental model</h2>
+      <p>For every file (and directory), the kernel asks three questions:</p>
+      <ol>
+        <li><strong>Who's trying to access it?</strong> Are they the <em>owner</em>, in the file's <em>group</em>, or <em>other</em> (everyone else)?</li>
+        <li><strong>What are they trying to do?</strong> Read, write, or execute?</li>
+        <li><strong>Does the matching permission bit allow it?</strong></li>
+      </ol>
+      <p>That gives <strong>nine bits per file</strong>: 3 actions × 3 classes.</p>
+
+<pre data-lang="diagram" data-nocopy="true"><code>        u (user/owner)        g (group)            o (other)
+        ┌──┬──┬──┐            ┌──┬──┬──┐           ┌──┬──┬──┐
+        │ r│ w│ x│            │ r│ w│ x│           │ r│ w│ x│
+        └──┴──┴──┘            └──┴──┴──┘           └──┴──┴──┘</code></pre>
+
+      <p><code>ls -l</code> shows them as a 10-character string:</p>
+
+<pre data-lang="diagram" data-nocopy="true"><code>-rwxr-xr--   1  alice  devs  4096  May 10 10:23  report.sh
+│└──┬──┘└──┬──┘└──┬──┘
+│   u    g    o
+│
+└── file type:  -  regular file
+                d  directory
+                l  symbolic link
+                c  character device, b  block device, p  pipe, s  socket</code></pre>
+
+      <p>Read that example as: <em>"owner can read/write/execute; group can read/execute; others can only read."</em></p>
+
+      <h3>Three classes, three actions — for <strong>directories</strong>, the meanings shift</h3>
+      <table>
+        <thead><tr><th>Bit</th><th>On a file</th><th>On a directory</th></tr></thead>
+        <tbody>
+          <tr><td><code>r</code></td><td>Read contents</td><td>List names of files inside</td></tr>
+          <tr><td><code>w</code></td><td>Modify contents</td><td>Create / delete / rename files inside</td></tr>
+          <tr><td><code>x</code></td><td>Execute as a program</td><td><code>cd</code> into it, access files inside by name</td></tr>
+        </tbody>
+      </table>
+
+      <p>The directory rules are subtle and matter:</p>
+      <ul>
+        <li>A directory with <code>r-x</code> lets you <code>ls</code> <em>and</em> <code>cd</code>.</li>
+        <li>A directory with <code>--x</code> lets you <code>cd</code> and access files <em>if you already know their names</em> — but <strong><code>ls</code> fails</strong>. (Common security pattern: hide contents but allow known paths.)</li>
+        <li>A directory with <code>r--</code> lets you <code>ls</code> but you <strong>can't</strong> access any listed file (no <code>x</code>).</li>
+      </ul>
+
+      <h3>Octal: the same bits, in three numbers</h3>
+      <table>
+        <thead><tr><th>Octal</th><th>Binary</th><th>Means</th></tr></thead>
+        <tbody>
+          <tr><td><code>0</code></td><td><code>---</code></td><td>nothing</td></tr>
+          <tr><td><code>1</code></td><td><code>--x</code></td><td>execute only</td></tr>
+          <tr><td><code>2</code></td><td><code>-w-</code></td><td>write only</td></tr>
+          <tr><td><code>3</code></td><td><code>-wx</code></td><td>write + execute</td></tr>
+          <tr><td><code>4</code></td><td><code>r--</code></td><td>read only</td></tr>
+          <tr><td><code>5</code></td><td><code>r-x</code></td><td>read + execute</td></tr>
+          <tr><td><code>6</code></td><td><code>rw-</code></td><td>read + write</td></tr>
+          <tr><td><code>7</code></td><td><code>rwx</code></td><td>all three</td></tr>
+        </tbody>
+      </table>
+      <p>A file with <code>rwxr-xr--</code> is <strong>754</strong>. A file with <code>rw-r--r--</code> is <strong>644</strong>. A directory you can read and traverse but not write is <strong>755</strong>. Memorize: 644, 755, 600 — these cover 90% of what you ever set.</p>
+
+      <h2 id="commands"><span class="secnum">§3</span>Core commands</h2>
+      <table>
+        <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>ls -l &lt;f&gt;</code></td><td>Show perms, owner, group.</td></tr>
+          <tr><td><code>chmod &lt;bits&gt; &lt;f&gt;</code></td><td>Change permissions.</td></tr>
+          <tr><td><code>chmod u+x f</code></td><td>Add execute for owner.</td></tr>
+          <tr><td><code>chmod go-w f</code></td><td>Remove write for group and other.</td></tr>
+          <tr><td><code>chmod a+r f</code></td><td>Add read for all (a = ugo).</td></tr>
+          <tr><td><code>chmod 755 f</code></td><td>Set explicitly to <code>rwxr-xr-x</code>.</td></tr>
+          <tr><td><code>chmod -R 755 dir/</code></td><td>Recurse into a tree.</td></tr>
+          <tr><td><code>chown user f</code></td><td>Change owner.</td></tr>
+          <tr><td><code>chown user:group f</code></td><td>Change owner and group.</td></tr>
+          <tr><td><code>chgrp group f</code></td><td>Change group only.</td></tr>
+          <tr><td><code>umask</code></td><td>Show default-permission mask for newly created files.</td></tr>
+          <tr><td><code>umask 022</code></td><td>Set the mask (new files = 666 − mask; new dirs = 777 − mask).</td></tr>
+          <tr><td><code>stat f</code></td><td>Permissions, ownership, timestamps, inode.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Three special bits</h3>
+      <table>
+        <thead><tr><th>Name</th><th>Symbol</th><th>Octal</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><strong>setuid</strong></td><td><code>s</code> in owner's <code>x</code> slot</td><td>4xxx</td><td>When the file runs, it runs <em>as the owner</em> (typically root). Used by <code>passwd</code>, <code>sudo</code>.</td></tr>
+          <tr><td><strong>setgid</strong></td><td><code>s</code> in group's <code>x</code> slot</td><td>2xxx</td><td>On a dir: new files inherit the dir's group. On a file: runs as the group.</td></tr>
+          <tr><td><strong>sticky bit</strong></td><td><code>t</code> in other's <code>x</code> slot</td><td>1xxx</td><td>On a directory: only the file's owner can delete their files. Used on <code>/tmp</code>.</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="walkthrough"><span class="secnum">§4</span>Guided walkthrough</h2>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cd ~
+<span class="tok-prompt">$ </span>mkdir -p lab07 &amp;&amp; cd lab07
+<span class="tok-prompt">$ </span>touch demo.sh
+<span class="tok-prompt">$ </span>ls -l demo.sh
+<span class="tok-comment"># -rw-r--r-- 1 you you 0 ... demo.sh        → octal 644</span>
+
+<span class="tok-comment"># add an executable bit for the owner</span>
+<span class="tok-prompt">$ </span>chmod u+x demo.sh
+<span class="tok-prompt">$ </span>ls -l demo.sh
+<span class="tok-comment"># -rwxr--r--                                → 744</span>
+
+<span class="tok-comment"># convert to octal directly</span>
+<span class="tok-prompt">$ </span>chmod 755 demo.sh
+<span class="tok-prompt">$ </span>ls -l demo.sh
+<span class="tok-comment"># -rwxr-xr-x                                → 755</span>
+
+<span class="tok-comment"># make a private file</span>
+<span class="tok-prompt">$ </span>touch secret.txt
+<span class="tok-prompt">$ </span>chmod 600 secret.txt
+<span class="tok-prompt">$ </span>ls -l secret.txt
+<span class="tok-comment"># -rw-------                                → 600 ("only owner can read or write")</span>
+
+<span class="tok-comment"># new directory perms</span>
+<span class="tok-prompt">$ </span>mkdir public
+<span class="tok-prompt">$ </span>ls -ld public
+<span class="tok-comment"># drwxr-xr-x                                → 755</span>
+
+<span class="tok-comment"># tighten it</span>
+<span class="tok-prompt">$ </span>chmod 700 public
+<span class="tok-prompt">$ </span>ls -ld public
+<span class="tok-comment"># drwx------                                → only owner can enter</span>
+
+<span class="tok-comment"># umask experiment</span>
+<span class="tok-prompt">$ </span>umask
+<span class="tok-comment"># 0022   (default on most desktops)</span>
+<span class="tok-prompt">$ </span>touch a.txt
+<span class="tok-prompt">$ </span>ls -l a.txt        <span class="tok-comment"># -rw-r--r--   (666 &amp; ~022 = 644)</span>
+
+<span class="tok-prompt">$ </span>umask 077
+<span class="tok-prompt">$ </span>touch b.txt
+<span class="tok-prompt">$ </span>ls -l b.txt        <span class="tok-comment"># -rw-------   (666 &amp; ~077 = 600)</span>
+
+<span class="tok-prompt">$ </span>umask 0022          <span class="tok-comment"># revert</span></code></pre>
+
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · <code>umask</code></span>
+        <p><code>umask</code> is the <em>default</em> applied to newly created files in this shell. It's a <em>mask</em> — bits set in the umask are <em>removed</em> from the permissions. Most people don't realize how much risk lives in a wrong default until a private key gets created world-readable.</p>
+      </div>
+
+      <h2 id="gotchas"><span class="secnum">§5</span>Gotchas</h2>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · <code>chmod 777</code> is rarely right</span>
+        <p>It's usually a band-aid for "I don't understand why this doesn't work." Find the real reason — almost always it's a directory <code>x</code> issue or wrong ownership.</p>
+      </div>
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · you can <code>chmod</code> what you can't <code>cat</code></span>
+        <p>Permissions are checked separately: if you own the file, you can change its bits even if you can't read it.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · <code>chown</code> requires root</span>
+        <p>Regular users can't give files away. <code>chgrp</code> works if you're a member of the target group.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · recursive <code>chmod</code></span>
+        <p><code>chmod -R 755 .</code> makes every text file <em>executable</em>, which is usually wrong. Better:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>find . -type f -exec chmod 644 {} \;
+<span class="tok-prompt">$ </span>find . -type d -exec chmod 755 {} \;</code></pre>
+      </div>
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · setuid on scripts is ignored</span>
+        <p>Linux ignores the setuid bit on scripts. It only applies to binaries (script-level setuid is too easy to subvert). Use <code>sudo</code> instead.</p>
+      </div>
+      <div class="callout callout-tip">
+        <span class="callout-label">Tip · sticky on <code>/tmp</code></span>
+        <p>A file inside <code>/tmp</code> can be deleted by you only. That's the sticky bit. <code>ls -ld /tmp</code> shows <code>drwxrwxrwt</code> — the <code>t</code> at the end.</p>
+      </div>
+
+      <h2 id="drills"><span class="secnum">§6</span>On-the-spot exercises</h2>
+
+      <div class="exercise">
+        <p><span class="ex-id">E7.1</span>Create <code>cmd.sh</code>. Make it readable and executable by anyone, writable only by you.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>touch cmd.sh
+<span class="tok-prompt">$ </span>chmod 755 cmd.sh
+<span class="tok-prompt">$ </span>ls -l cmd.sh        <span class="tok-comment"># -rwxr-xr-x</span></code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E7.2</span>Make a file <code>~/secret.txt</code> that only you can read or write.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>touch ~/secret.txt
+<span class="tok-prompt">$ </span>chmod 600 ~/secret.txt
+<span class="tok-prompt">$ </span>ls -l ~/secret.txt   <span class="tok-comment"># -rw-------</span></code></pre>
+          <p><code>600</code> is the right answer for private files like <code>~/.ssh/id_rsa</code>.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E7.3</span>Translate to octal: <code>rwxr-x---</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+          <p><code>750</code>. Owner = <code>rwx</code> = 7. Group = <code>r-x</code> = 5. Other = <code>---</code> = 0.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E7.4</span>Translate to symbolic: <code>640</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+          <p><code>rw-r-----</code> (owner read/write, group read, others nothing).</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E7.5</span>A friend can't read your shared script even though they're in the right group. What's the most likely cause?</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+          <p>Either (a) the file's group permissions don't include <code>r</code>, or (b) one of the <strong>directories</strong> along the path doesn't grant <code>x</code> to that group, so they can't traverse into where the file lives.</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>ls -l shared.sh                 <span class="tok-comment"># file perms</span>
+<span class="tok-prompt">$ </span>namei -m /path/to/shared.sh     <span class="tok-comment"># all ancestor dirs and their perms</span></code></pre>
+          <p><code>namei -m</code> is gold for diagnosing path-permission problems.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E7.6</span>Set up <code>~/dropbox/</code> so any user can put files in but only the file's owner can delete them.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>mkdir ~/dropbox
+<span class="tok-prompt">$ </span>chmod 1777 ~/dropbox        <span class="tok-comment"># rwxrwxrwt  — sticky bit</span></code></pre>
+          <p>Same pattern as <code>/tmp</code>.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E7.7</span>Find every file under <code>~/</code> that's world-writable.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>find ~ -type f -perm -o+w 2&gt;/dev/null</code></pre>
+          <p><code>-perm -o+w</code> means "has at least the 'other-write' bit set." World-writable files are a common security audit finding.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E7.8</span>Make a fresh directory <code>~/team/</code> so new files inside automatically belong to the group <code>devs</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo groupadd devs                <span class="tok-comment"># if it doesn't exist</span>
+<span class="tok-prompt">$ </span>mkdir ~/team
+<span class="tok-prompt">$ </span>sudo chgrp devs ~/team
+<span class="tok-prompt">$ </span>chmod 2775 ~/team                 <span class="tok-comment"># the 2 is setgid</span>
+<span class="tok-prompt">$ </span>ls -ld ~/team                     <span class="tok-comment"># drwxrwsr-x — note the 's' in group's x slot</span></code></pre>
+          <p>Now any file or subdir created inside <code>~/team</code> inherits group <code>devs</code>, no matter who creates it. Classic shared-team-folder pattern.</p>
+        </div></details>
+      </div>
+
+      <h2 id="scenario"><span class="secnum">§7</span>Real-world sysadmin scenario</h2>
+      <p><strong>Security audit, Monday morning.</strong> Compliance wants a list of every world-writable file outside <code>/tmp</code>:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo find / -xdev -type f -perm -o+w \
+    -not -path '/tmp/*' -not -path '/var/tmp/*' \
+    -not -path '/proc/*' 2&gt;/dev/null</code></pre>
+      <p>That one command becomes the audit report. For each hit, you <code>ls -l</code> to see the actual perms, decide whether it's intentional, and <code>chmod o-w</code> the ones that aren't.</p>
+      <p>A second classic: an SSH key with wrong perms causes a confusing "permission denied" <em>before</em> you ever fail authentication:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>ssh -i ~/.ssh/id_rsa user@host
+<span class="tok-comment"># Permissions 0644 for '/home/you/.ssh/id_rsa' are too open.</span>
+<span class="tok-comment"># It is recommended that your private key files are NOT accessible by others.</span></code></pre>
+      <p>The fix:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>chmod 600 ~/.ssh/id_rsa
+<span class="tok-prompt">$ </span>chmod 700 ~/.ssh</code></pre>
+      <p>OpenSSH refuses to use a private key unless <code>600</code> <em>and</em> the parent directory is <code>700</code>. Knowing this saves you 30 minutes of "but the key works on my laptop."</p>
+
+      <h2 id="recap"><span class="secnum">§8</span>What to remember</h2>
+      <ul>
+        <li>Nine bits: <code>rwx</code> × <code>user/group/other</code>. Octal: 644, 755, 600, 700.</li>
+        <li>For directories: <code>r</code> lists, <code>w</code> modifies, <code>x</code> traverses.</li>
+        <li><code>chmod</code>, <code>chown</code>, <code>chgrp</code>, <code>umask</code>. That's the toolkit.</li>
+        <li>Setuid/setgid/sticky are real bits. Sticky on <code>/tmp</code> is why your tempfiles are safe.</li>
+        <li><code>chmod 777</code> is almost never right.</li>
+        <li>SSH keys: <code>~/.ssh</code> = 700, <code>id_rsa</code> = 600. Or it won't work.</li>
+      </ul>
+
+      <a class="next-card" href="08-redirection-pipes.html">
+        <span class="label">NEXT · MODULE 08</span>
+        <span class="title">Redirection &amp; pipes</span>
+        <span class="desc">stdin, stdout, stderr, and the pipe — wiring commands together.</span>
+      </a>
+    </article>
+
+    <footer class="colophon">
+      <p>NCS 205 handbook · module 07 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
+    </footer>
+  </main>
+
+  <aside class="toc" aria-label="On this page">
+    <div class="toc-title">On this page</div>
+    <ul>
+      <li><a href="#why">§1 Why this matters</a></li>
+      <li><a href="#mental-model">§2 Mental model</a></li>
+      <li><a href="#commands">§3 Core commands</a></li>
+      <li><a href="#walkthrough">§4 Walkthrough</a></li>
+      <li><a href="#gotchas">§5 Gotchas</a></li>
+      <li><a href="#drills">§6 Exercises</a></li>
+      <li><a href="#scenario">§7 Scenario</a></li>
+      <li><a href="#recap">§8 What to remember</a></li>
+    </ul>
+  </aside>
+</div>
+
+<script src="assets/site.js"></script>
+</body>
+</html>

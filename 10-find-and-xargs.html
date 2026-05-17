@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>10 · find &amp; xargs — Mentor's Guide to Linux</title>
+<meta name="description" content="Walk trees and act on what you find. find tests, actions, and xargs as the safe pipeline partner." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="brand">
+    <a href="index.html" style="border:none; color: inherit; display: contents;">
+      <span class="mark">/&gt;</span>
+      <span>The Mentor's Guide to Linux</span>
+    </a>
+    <span class="sub">NCS 205 handbook</span>
+  </div>
+  <div class="right">
+    <span class="crumbs"><a href="index.html" style="color: inherit; border: none;">HOME</a> / <strong>MODULE 10</strong></span>
+    <button class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+      <span class="icon">☼</span><span class="label">PAPER</span>
+    </button>
+    <button class="menu-btn" aria-label="Open table of contents" aria-expanded="false">MENU</button>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="sidebar" id="sidebar" aria-label="Module navigation"></aside>
+
+  <main class="main" id="main">
+    <article class="module">
+      <div class="meta-row">
+        <span><span class="label">MODULE</span>10</span>
+        <span><span class="label">MAPS TO</span>LAB 23</span>
+        <span><span class="label">TIME</span>~30 min</span>
+      </div>
+
+      <h1>find and xargs</h1>
+      <p class="lede">Globs match files in one directory. <code>find</code> walks an entire tree and matches by <em>any</em> criterion — then acts on each match.</p>
+
+      <h2 id="why"><span class="secnum">§1</span>Why this matters</h2>
+      <p>The combination of <code>find</code> and <code>xargs</code> is how sysadmins do bulk operations safely: "delete all the 30-day-old log files," "set every directory to mode 755 but every file to 644," "tar up everything modified yesterday."</p>
+
+      <h2 id="mental-model"><span class="secnum">§2</span>Mental model</h2>
+      <p><code>find</code> has a slightly weird syntax that throws beginners. It's actually quite consistent:</p>
+<pre data-lang="diagram" data-nocopy="true"><code>   find  STARTING_PATH(s)   TESTS   ACTION
+   ────  ────────────────   ─────   ──────
+   find  /var/log           -name '*.gz' -mtime +7   -delete</code></pre>
+      <ul>
+        <li><strong>Starting path</strong> — where to begin walking.</li>
+        <li><strong>Tests</strong> — filters that all must match (implicit AND).</li>
+        <li><strong>Action</strong> — what to do with each match. Default is <code>-print</code>.</li>
+      </ul>
+      <p><code>find</code> is exhaustive by default — it descends into every subdirectory. That power is why it's useful and why you must point it carefully.</p>
+
+      <h2 id="tests"><span class="secnum">§3</span>Core find tests</h2>
+      <table>
+        <thead><tr><th>Test</th><th>Matches</th></tr></thead>
+        <tbody>
+          <tr><td><code>-name 'pattern'</code></td><td>Glob match on the base filename (quote it!)</td></tr>
+          <tr><td><code>-iname 'pattern'</code></td><td>Case-insensitive name match</td></tr>
+          <tr><td><code>-path 'glob'</code></td><td>Glob against the <em>full</em> path</td></tr>
+          <tr><td><code>-type f</code></td><td>Regular files</td></tr>
+          <tr><td><code>-type d</code></td><td>Directories</td></tr>
+          <tr><td><code>-type l</code></td><td>Symbolic links</td></tr>
+          <tr><td><code>-size +1M</code></td><td>Larger than 1 MB. Also <code>c</code> bytes, <code>k</code> KB, <code>G</code> GB.</td></tr>
+          <tr><td><code>-size -100k</code></td><td>Smaller than 100 KB</td></tr>
+          <tr><td><code>-mtime -7</code></td><td>Modified less than 7 days ago</td></tr>
+          <tr><td><code>-mtime +30</code></td><td>Modified more than 30 days ago</td></tr>
+          <tr><td><code>-mmin -60</code></td><td>Modified less than 60 minutes ago</td></tr>
+          <tr><td><code>-newer otherfile</code></td><td>Newer than <code>otherfile</code></td></tr>
+          <tr><td><code>-user alice</code></td><td>Owned by alice</td></tr>
+          <tr><td><code>-group devs</code></td><td>Owned by group devs</td></tr>
+          <tr><td><code>-perm 644</code></td><td>Exactly permissions 644</td></tr>
+          <tr><td><code>-perm -o+w</code></td><td>At least world-writable</td></tr>
+          <tr><td><code>-empty</code></td><td>Zero-sized files or empty dirs</td></tr>
+          <tr><td><code>-not &lt;test&gt;</code></td><td>Logical NOT (or <code>!</code>)</td></tr>
+          <tr><td><code>&lt;test&gt; -o &lt;test&gt;</code></td><td>Logical OR (default is implicit AND)</td></tr>
+          <tr><td><code>\( ... \)</code></td><td>Group expressions (parens)</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Actions</h3>
+      <table>
+        <thead><tr><th>Action</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>-print</code></td><td>Print the path (default)</td></tr>
+          <tr><td><code>-print0</code></td><td>NUL-separated (safe for filenames with spaces)</td></tr>
+          <tr><td><code>-ls</code></td><td>Long-format listing like <code>ls -l</code></td></tr>
+          <tr><td><code>-delete</code></td><td>Delete the match</td></tr>
+          <tr><td><code>-exec CMD {} \;</code></td><td>Run CMD per match. <code>{}</code> is the path.</td></tr>
+          <tr><td><code>-exec CMD {} +</code></td><td>Same but batches paths (faster)</td></tr>
+          <tr><td><code>-quit</code></td><td>Stop after the first match</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · <code>-delete</code> is final</span>
+        <p>Always run the same command with <code>-print</code> first to <em>see</em> what would be deleted. Then change <code>-print</code> to <code>-delete</code>.</p>
+      </div>
+
+      <h2 id="xargs"><span class="secnum">§4</span>xargs — the partner tool</h2>
+      <p><code>xargs</code> reads lines from stdin and turns them into arguments for a command.</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>find . -name '*.log' | xargs gzip
+<span class="tok-prompt">$ </span>find . -name '*.log' -print0 | xargs -0 gzip   <span class="tok-comment"># NUL-safe</span></code></pre>
+
+      <table>
+        <thead><tr><th>Flag</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><code>-0</code></td><td>Input separated by NUL (pair with <code>find -print0</code>)</td></tr>
+          <tr><td><code>-n N</code></td><td>Up to N args per command call</td></tr>
+          <tr><td><code>-P N</code></td><td>Run up to N copies in parallel</td></tr>
+          <tr><td><code>-I {}</code></td><td>Use <code>{}</code> as placeholder</td></tr>
+          <tr><td><code>-r</code></td><td>Don't run if no input</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="walkthrough"><span class="secnum">§5</span>Guided walkthrough</h2>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cd ~/ncs205-sandbox/tree/
+
+<span class="tok-comment"># the simplest find</span>
+<span class="tok-prompt">$ </span>find .                              <span class="tok-comment"># every path, recursively</span>
+
+<span class="tok-comment"># filter by name</span>
+<span class="tok-prompt">$ </span>find . -name '*.md'
+<span class="tok-prompt">$ </span>find . -iname '*.MD'
+
+<span class="tok-comment"># filter by type</span>
+<span class="tok-prompt">$ </span>find . -type f
+<span class="tok-prompt">$ </span>find . -type d
+
+<span class="tok-comment"># combine tests (AND is implicit)</span>
+<span class="tok-prompt">$ </span>find . -type f -name '*.log'
+
+<span class="tok-comment"># size</span>
+<span class="tok-prompt">$ </span>find . -type f -size +1c
+
+<span class="tok-comment"># negate</span>
+<span class="tok-prompt">$ </span>find . -not -name '*.md'
+
+<span class="tok-comment"># OR — must group expressions</span>
+<span class="tok-prompt">$ </span>find . \( -name '*.log' -o -name '*.tmp' \) -type f
+
+<span class="tok-comment"># show full listing</span>
+<span class="tok-prompt">$ </span>find . -type f -ls
+
+<span class="tok-comment"># run a command per match — old style</span>
+<span class="tok-prompt">$ </span>find . -type f -exec wc -l {} \;
+
+<span class="tok-comment"># run once with many args — faster</span>
+<span class="tok-prompt">$ </span>find . -type f -exec wc -l {} +
+
+<span class="tok-comment"># safer alternative with xargs</span>
+<span class="tok-prompt">$ </span>find . -type f -print0 | xargs -0 wc -l
+
+<span class="tok-comment"># age-based cleanup (DRY-RUN FIRST)</span>
+<span class="tok-prompt">$ </span>find ~/ncs205-sandbox -name '*.tmp' -mtime +0 -print
+<span class="tok-comment"># find ~/ncs205-sandbox -name '*.tmp' -mtime +0 -delete</span></code></pre>
+
+      <p>Note the <em>print-then-delete</em> pattern. Bake it into your habits.</p>
+
+      <h2 id="gotchas"><span class="secnum">§6</span>Gotchas</h2>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · quote your <code>-name</code></span>
+        <p><code>find . -name *.log</code> lets the shell expand <code>*.log</code> <em>before</em> find runs. Use <code>-name '*.log'</code>.</p>
+      </div>
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · <code>-mtime</code> is days; <code>-mmin</code> is minutes</span>
+        <p>Leading <code>+</code> = more than, <code>-</code> = less than, no sign = exactly N. <code>-mtime 0</code> matches files modified in the last 24 hours.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · <code>-exec ... \;</code> is slow</span>
+        <p>It runs the command once per file. Use <code>-exec ... +</code> to batch — way faster.</p>
+      </div>
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · spaces in filenames break naive xargs</span>
+        <p><code>find ... | xargs</code> splits on whitespace, so "report v2.txt" becomes two args. Use <code>find ... -print0 | xargs -0</code>.</p>
+      </div>
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note · <code>-perm</code> nuances</span>
+        <p><code>-perm 644</code> means <em>exactly</em> 644. <code>-perm -644</code> means <em>at least</em> those bits. <code>-perm /644</code> means <em>any</em> of those bits.</p>
+      </div>
+      <div class="callout callout-tip">
+        <span class="callout-label">Tip · stay on one filesystem with <code>-xdev</code></span>
+        <p><code>find /</code> can be slow because it traverses every mount. <code>-xdev</code> stops at filesystem boundaries.</p>
+      </div>
+
+      <h2 id="drills"><span class="secnum">§7</span>On-the-spot exercises</h2>
+      <p>Use the sandbox tree at <code>~/ncs205-sandbox/tree/</code>.</p>
+
+      <div class="exercise">
+        <p><span class="ex-id">E10.1</span>List every <code>.md</code> file under the tree.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>find ~/ncs205-sandbox/tree -name '*.md'</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E10.2</span>List every directory under the tree.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>find ~/ncs205-sandbox/tree -type d</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E10.3</span>Find every file modified in the last 7 days under your home directory.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>find ~ -type f -mtime -7</code></pre>
+          <p><code>-7</code> = "less than 7 days ago," <code>+7</code> = "more than 7 days ago."</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E10.4</span>Find every empty file under <code>/tmp/</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>find /tmp/ -type f -empty 2&gt;/dev/null</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E10.5</span>Find every <code>.log</code> or <code>.tmp</code> file in <code>/var/</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo find /var/ \( -name '*.log' -o -name '*.tmp' \) -type f 2&gt;/dev/null</code></pre>
+          <p>Without the parens, <code>-o</code> binds looser than <code>-type</code>, and the meaning shifts.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E10.6</span>Show the size and path of every file over 1 MB in <code>/var/log/</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo find /var/log/ -type f -size +1M -ls</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E10.7</span>Delete every <code>*.tmp</code> file in <code>~/ncs205-sandbox/tree/</code>. <strong>First print</strong> what would be deleted, then delete.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>find ~/ncs205-sandbox/tree -name '*.tmp' -print     <span class="tok-comment"># confirm</span>
+<span class="tok-prompt">$ </span>find ~/ncs205-sandbox/tree -name '*.tmp' -delete    <span class="tok-comment"># actually delete</span></code></pre>
+          <p>The print-then-delete habit. Internalize it.</p>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E10.8</span>Recursively <code>chmod 644</code> every file (but not directory) under <code>~/ncs205-sandbox/</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>find ~/ncs205-sandbox -type f -exec chmod 644 {} +</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E10.9</span>Find every file in <code>/etc/</code> owned by you.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>find /etc -user "$USER" 2&gt;/dev/null</code></pre>
+        </div></details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E10.10</span>Count the total disk usage of all <code>.log</code> files under <code>/var/log/</code> using <code>find</code> + <code>xargs</code>.</p>
+        <details class="drill"><summary>Show answer</summary><div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sudo find /var/log -type f -name '*.log' -print0 \
+  | xargs -0 du -ch \
+  | tail -1</code></pre>
+        </div></details>
+      </div>
+
+      <h2 id="scenario"><span class="secnum">§8</span>Real-world sysadmin scenario</h2>
+      <p><strong>The dreaded "disk filling up"</strong> — but smartly this time:</p>
+<pre data-lang="sh"><code><span class="tok-comment"># Top 10 biggest files anywhere (skipping /proc, /sys)</span>
+<span class="tok-prompt">$ </span>sudo find / -xdev -type f -not -path '/proc/*' -not -path '/sys/*' \
+    -printf '%s %p\n' 2&gt;/dev/null \
+  | sort -rn | head -10 \
+  | awk '{ printf "%6.1fM  %s\n", $1/1024/1024, $2 }'</code></pre>
+
+      <p>One-liner you copy into your runbook. Once you have the top 10, you decide which to act on — and <code>find</code> can take that action too:</p>
+<pre data-lang="sh"><code><span class="tok-comment"># Compress all .log files in /var/log/myapp older than 7 days</span>
+<span class="tok-prompt">$ </span>sudo find /var/log/myapp -type f -name '*.log' -mtime +7 -exec gzip {} +</code></pre>
+
+      <h2 id="recap"><span class="secnum">§9</span>What to remember</h2>
+      <ul>
+        <li><code>find PATH TESTS ACTION</code> — that's the whole pattern.</li>
+        <li>Quote <code>-name</code> patterns.</li>
+        <li><code>-print</code> first, <code>-delete</code> second. Always.</li>
+        <li><code>-exec CMD {} +</code> is the modern, fast form.</li>
+        <li><code>xargs -0</code> + <code>find -print0</code> is the safe way to pipe filenames.</li>
+        <li>For one-filesystem searches, add <code>-xdev</code>.</li>
+      </ul>
+
+      <a class="next-card" href="11-processes-and-jobs.html">
+        <span class="label">NEXT · MODULE 11</span>
+        <span class="title">Processes &amp; jobs</span>
+        <span class="desc">Inspect, signal, background, and kill processes.</span>
+      </a>
+    </article>
+
+    <footer class="colophon">
+      <p>NCS 205 handbook · module 10 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
+    </footer>
+  </main>
+
+  <aside class="toc" aria-label="On this page">
+    <div class="toc-title">On this page</div>
+    <ul>
+      <li><a href="#why">§1 Why this matters</a></li>
+      <li><a href="#mental-model">§2 Mental model</a></li>
+      <li><a href="#tests">§3 find tests</a></li>
+      <li><a href="#xargs">§4 xargs</a></li>
+      <li><a href="#walkthrough">§5 Walkthrough</a></li>
+      <li><a href="#gotchas">§6 Gotchas</a></li>
+      <li><a href="#drills">§7 Exercises</a></li>
+      <li><a href="#scenario">§8 Scenario</a></li>
+      <li><a href="#recap">§9 What to remember</a></li>
+    </ul>
+  </aside>
+</div>
+
+<script src="assets/site.js"></script>
+</body>
+</html>

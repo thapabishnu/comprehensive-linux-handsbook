@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>01 · Shell &amp; SSH — Mentor's Guide to Linux</title>
+<meta name="description" content="The shell, SSH, and what your prompt is telling you. Mental model, walkthrough, gotchas, drills, and a real-world sysadmin scenario." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="brand">
+    <a href="index.html" style="border:none; color: inherit; display: contents;">
+      <span class="mark">/&gt;</span>
+      <span>The Mentor's Guide to Linux</span>
+    </a>
+    <span class="sub">NCS 205 handbook</span>
+  </div>
+  <div class="right">
+    <span class="crumbs"><a href="index.html" style="color: inherit; border: none;">HOME</a> / <strong>MODULE 01</strong></span>
+    <button class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+      <span class="icon">☼</span><span class="label">PAPER</span>
+    </button>
+    <button class="menu-btn" aria-label="Open table of contents" aria-expanded="false">MENU</button>
+  </div>
+</header>
+
+<div class="shell">
+
+  <aside class="sidebar" id="sidebar" aria-label="Module navigation"></aside>
+
+  <main class="main" id="main">
+
+    <article class="module">
+
+      <div class="meta-row">
+        <span><span class="label">MODULE</span>01</span>
+        <span><span class="label">MAPS TO</span>LAB 1 · LAB 2(Q1) · LAB 64</span>
+        <span><span class="label">TIME</span>~35 min</span>
+      </div>
+
+      <h1>The shell, SSH, and what your prompt is telling you</h1>
+
+      <p class="lede">Prerequisites: you've done <a href="00-orientation.html">Module 00</a> and have a working Linux shell open in front of you.</p>
+
+      <h2 id="why"><span class="secnum">§1</span>Why this matters</h2>
+      <p>The shell is the <strong>single most important tool you'll learn</strong> as a Linux user. It's how every other tool you'll meet — <code>grep</code>, <code>vi</code>, <code>find</code>, <code>systemctl</code> — actually runs. Most servers in production today have <strong>no GUI at all</strong>. If you can't operate a shell, you can't operate a Linux server.</p>
+      <p>SSH is how you reach those shells from anywhere in the world. If you can read a prompt and SSH in, you can administer a server in Frankfurt from a laptop in Buffalo. That's the leverage we're after.</p>
+
+      <h2 id="mental-model"><span class="secnum">§2</span>Mental model</h2>
+      <p>Three layers to keep straight:</p>
+<pre data-lang="diagram" data-nocopy="true"><code>  YOU ──► (keyboard) ──► terminal emulator ──► shell ──► kernel ──► hardware</code></pre>
+
+      <ul>
+        <li><strong>Terminal emulator</strong> — the <em>window</em> (WSL's Ubuntu window, PuTTY, iTerm2, GNOME Terminal). Just draws characters and reads keys.</li>
+        <li><strong>Shell</strong> — the <em>program</em> that reads what you type and runs it. Modern Linux: <strong>bash</strong> (Bourne Again Shell). Older Unix: <strong>sh</strong> (the Bourne shell). Other popular: <strong>zsh</strong>, <strong>fish</strong>.</li>
+        <li><strong>Kernel</strong> — the OS itself, talking to hardware.</li>
+      </ul>
+      <p>When you type <code>ls</code> and hit <kbd>Enter</kbd>:</p>
+      <ol>
+        <li>The terminal sent your keystrokes to the shell.</li>
+        <li>The shell parsed <code>ls</code>, located the program (<code>/usr/bin/ls</code>), forked a child process, replaced it with the <code>ls</code> program (<code>exec</code>), and waited.</li>
+        <li><code>ls</code> asked the kernel for the contents of the current directory.</li>
+        <li><code>ls</code> printed them to its <strong>standard output</strong>, which the terminal displayed.</li>
+        <li><code>ls</code> exited; the shell printed your prompt again, ready for the next command.</li>
+      </ol>
+      <p>That cycle — <strong>read input → execute → print prompt</strong> — is called the <strong>REPL</strong>. Everything you do is some variation of it.</p>
+
+      <h3>SSH in one picture</h3>
+<pre data-lang="diagram" data-nocopy="true"><code>  your laptop's terminal ──── encrypted TCP tunnel ──── remote shell on server
+                            (port 22, public-key crypto)</code></pre>
+      <p>SSH (<strong>Secure SHell</strong>) is just <em>a way to get your keystrokes into a shell that's running on another machine</em>, securely. Once you're connected, <strong>the experience is identical to a local shell</strong> — same commands, same rules.</p>
+
+      <h2 id="commands"><span class="secnum">§3</span>Core commands &amp; syntax</h2>
+
+      <h3>Getting in and out</h3>
+      <table>
+        <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>ssh user@host</code></td><td>Open a shell on <code>host</code> as <code>user</code>. Default port 22.</td></tr>
+          <tr><td><code>ssh -p 2222 user@host</code></td><td>Specify a non-default port.</td></tr>
+          <tr><td><code>ssh -i ~/.ssh/mykey user@host</code></td><td>Use a specific private key file.</td></tr>
+          <tr><td><code>exit</code> (or <code>logout</code>, <kbd>Ctrl</kbd>+<kbd>D</kbd>)</td><td>End the session and return to where you came from.</td></tr>
+          <tr><td><code>scp file user@host:/path/</code></td><td>Secure copy — upload a file to remote.</td></tr>
+          <tr><td><code>scp user@host:/path/file .</code></td><td>Download a remote file to current dir.</td></tr>
+          <tr><td><code>sftp user@host</code></td><td>Interactive secure FTP-like file transfer.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Inspecting your session</h3>
+      <table>
+        <thead><tr><th>Command</th><th>What it tells you</th></tr></thead>
+        <tbody>
+          <tr><td><code>whoami</code></td><td>Your username.</td></tr>
+          <tr><td><code>hostname</code></td><td>The machine's name.</td></tr>
+          <tr><td><code>pwd</code></td><td>The directory you're currently in.</td></tr>
+          <tr><td><code>id</code></td><td>Your numeric UID, GID, and group memberships.</td></tr>
+          <tr><td><code>tty</code></td><td>Which terminal device you're attached to (e.g. <code>/dev/pts/0</code>).</td></tr>
+          <tr><td><code>who</code></td><td>Who else is logged in.</td></tr>
+          <tr><td><code>w</code></td><td>Who else is logged in <strong>and what they're doing</strong>.</td></tr>
+          <tr><td><code>last</code></td><td>Recent login history.</td></tr>
+          <tr><td><code>uptime</code></td><td>How long the box has been running + load averages.</td></tr>
+          <tr><td><code>uname -a</code></td><td>Kernel, hostname, architecture.</td></tr>
+          <tr><td><code>passwd</code></td><td>Change <em>your</em> password (current first, then new twice).</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Useful keyboard shortcuts (memorize early)</h3>
+      <table>
+        <thead><tr><th>Keys</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr><td><kbd>Tab</kbd></td><td>Autocomplete a command, filename, or path. <strong>Double-Tab</strong> shows candidates.</td></tr>
+          <tr><td><kbd>↑</kbd> / <kbd>↓</kbd></td><td>Walk through command history.</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>R</kbd></td><td>Reverse-search history. Type a few letters; press <kbd>Ctrl</kbd>+<kbd>R</kbd> again to cycle.</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>A</kbd> / <kbd>Ctrl</kbd>+<kbd>E</kbd></td><td>Jump to beginning / end of the line.</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>U</kbd> / <kbd>Ctrl</kbd>+<kbd>K</kbd></td><td>Kill text before / after cursor.</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>W</kbd></td><td>Kill the word before cursor.</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>L</kbd></td><td>Clear the screen (same as <code>clear</code> but faster).</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>C</kbd></td><td>Cancel the current command / line.</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>D</kbd></td><td>EOF — exits the shell if the line is empty.</td></tr>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd></td><td>Suspend the running program (we'll use this in module 11).</td></tr>
+        </tbody>
+      </table>
+      <p>Tab-completion alone will save you hours per week. <strong>Use it constantly.</strong></p>
+
+      <h2 id="walkthrough"><span class="secnum">§4</span>Guided walkthrough</h2>
+      <p>Open your shell. Follow along. Read every output line.</p>
+
+      <h3>Step 1 — Confirm where you are</h3>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>whoami
+<span class="tok-prompt">$ </span>hostname
+<span class="tok-prompt">$ </span>pwd</code></pre>
+      <p>You should see your username, the box name, and <code>/home/yourusername</code>. That's your <strong>home directory</strong>, abbreviated as <code>~</code>.</p>
+
+      <h3>Step 2 — Read your prompt</h3>
+      <p>Your prompt likely looks something like:</p>
+<pre data-lang="prompt" data-nocopy="true"><code>yourname@hostname:~$</code></pre>
+      <p>Let's decode it:</p>
+      <table>
+        <thead><tr><th>Piece</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>yourname</code></td><td>Logged-in user (= <code>whoami</code>)</td></tr>
+          <tr><td><code>@</code></td><td>Separator, literal</td></tr>
+          <tr><td><code>hostname</code></td><td>The machine (= <code>hostname</code>)</td></tr>
+          <tr><td><code>:</code></td><td>Separator, literal</td></tr>
+          <tr><td><code>~</code></td><td>Current directory (<code>~</code> means "my home")</td></tr>
+          <tr><td><code>$</code></td><td>You're a <strong>regular user</strong>. (If it's <code>#</code>, you're <strong>root</strong> — be careful.)</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note</span>
+        <p>That single-character difference — <code>$</code> vs <code>#</code> — is one of the most important signals in this entire course. <code>#</code> means <em>unrestricted power</em>. We'll dig into that more in module 16.</p>
+      </div>
+
+      <h3>Step 3 — Inspect who's on the box</h3>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>who
+<span class="tok-prompt">$ </span>w
+<span class="tok-prompt">$ </span>last | head -5</code></pre>
+      <ul>
+        <li><code>who</code> lists active logins (just name, terminal, login time).</li>
+        <li><code>w</code> adds: what command each user is running, how idle they are, system load.</li>
+        <li><code>last</code> is historical: shows logins going back through <code>/var/log/wtmp</code>.</li>
+      </ul>
+      <p>If you're on a shared server, you'll see classmates. On WSL or a personal VM, just you.</p>
+
+      <h3>Step 4 — Open a second session (the magic of SSH)</h3>
+      <p>If you have a second machine or can install an SSH server on your VM:</p>
+<pre data-lang="sh"><code><span class="tok-comment"># On the remote box, install and start the SSH service (Ubuntu/Debian):</span>
+<span class="tok-prompt">$ </span>sudo apt install -y openssh-server
+<span class="tok-prompt">$ </span>sudo systemctl enable --now ssh
+
+<span class="tok-comment"># On the remote box, find its IP:</span>
+<span class="tok-prompt">$ </span>ip -4 addr show | grep inet
+
+<span class="tok-comment"># From your laptop:</span>
+<span class="tok-prompt">$ </span>ssh yourname@&lt;that-IP&gt;</code></pre>
+      <p>Now type <code>w</code> on the remote side. You'll see yourself logged in <em>twice</em> (your original session + this SSH one). This is exactly how a real sysadmin works — multiple sessions open at once.</p>
+      <p><code>exit</code> will close the SSH session and drop you back to the original shell.</p>
+
+      <h3>Step 5 — Move a file with <code>scp</code></h3>
+      <p>From your laptop's shell (not the remote one):</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>echo "hello from my laptop" &gt; greeting.txt
+<span class="tok-prompt">$ </span>scp greeting.txt yourname@&lt;that-IP&gt;:~/</code></pre>
+      <p>Then on the remote box, <code>cat greeting.txt</code> to see it. Reverse direction:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>scp yourname@&lt;that-IP&gt;:~/greeting.txt ./greeting-back.txt</code></pre>
+      <p><code>scp</code> is being deprecated in favor of <code>sftp</code>/<code>rsync</code> for new code, but it's still everywhere and will be tested on labs.</p>
+
+      <h2 id="gotchas"><span class="secnum">§5</span>Gotchas</h2>
+      <p>These are the traps I'd flag for a junior:</p>
+
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · #  vs  $</span>
+        <p>If your prompt suddenly shows <code>#</code>, <strong>you are root</strong>. A wrong <code>rm</code> will erase files no normal user could. Always confirm with <code>whoami</code> if you're unsure. We'll cover <code>sudo</code> and how people end up as root in module 16.</p>
+      </div>
+
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · closing your laptop kills SSH</span>
+        <p>By default, when your SSH connection drops (Wi-Fi dies, laptop sleeps), every command you started in that session dies too. We'll fix this with <code>tmux</code> / <code>screen</code> in module 11. For now: <strong>don't start a 4-hour job in a fragile SSH session</strong>.</p>
+      </div>
+
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · host fingerprint warning</span>
+        <p>The first time you SSH to a new host, SSH asks you to confirm its fingerprint. If you blindly type <code>yes</code>, you trust whatever's there. If you later see <em>"WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED"</em>, <strong>stop</strong>. It either means the server was rebuilt (legitimate) or someone is intercepting your connection (very not legitimate). Confirm out-of-band before you continue.</p>
+      </div>
+
+      <div class="callout callout-gotcha">
+        <span class="callout-label">Gotcha · forgetting <code>exit</code></span>
+        <p>If you SSH from server A → server B and then run more SSH commands, you can stack 4 deep without realizing it. <code>exit</code> peels off <strong>one</strong> layer. Use <code>who am i</code> or look at your prompt's hostname to keep track.</p>
+      </div>
+
+      <div class="callout callout-tip">
+        <span class="callout-label">Tip · trust Tab over your memory</span>
+        <p>If <code>ls -al /etc/passw</code><kbd>Tab</kbd> doesn't complete, the file you think exists doesn't.</p>
+      </div>
+
+      <div class="callout callout-tip">
+        <span class="callout-label">Tip · <code>passwd</code> needs the current one first</span>
+        <p><code>passwd</code> asks for your current password first, then the new one twice. Get the current one wrong and it just bails — no harm done. On the class server, the first time you run <code>passwd</code> may force you to change it.</p>
+      </div>
+
+      <h2 id="drills"><span class="secnum">§6</span>On-the-spot exercises</h2>
+      <p>Do these in your terminal now. Try before peeking.</p>
+
+      <div class="exercise">
+        <p><span class="ex-id">E1.1</span>Print your username, hostname, current directory, and the time the system booted, in one command per line.</p>
+        <details class="drill">
+          <summary>Show answer</summary>
+          <div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>whoami
+<span class="tok-prompt">$ </span>hostname
+<span class="tok-prompt">$ </span>pwd
+<span class="tok-prompt">$ </span>uptime -s         <span class="tok-comment"># boot time, e.g. "2026-05-15 09:12:33"</span></code></pre>
+            <p><code>uptime</code> without <code>-s</code> gives load averages and uptime duration; <code>uptime -s</code> is the boot timestamp. Knowing the boot time matters: <em>"Did this box reboot last night?"</em> is often the first question during an incident.</p>
+          </div>
+        </details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E1.2</span>Show all users currently logged in, including what they're running.</p>
+        <details class="drill">
+          <summary>Show answer</summary>
+          <div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>w</code></pre>
+            <p><code>who</code> would also list logins but without the running-command column.</p>
+          </div>
+        </details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E1.3</span>Look at the last 10 logins to this system. Are any from IPs you don't recognize?</p>
+        <details class="drill">
+          <summary>Show answer</summary>
+          <div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>last -n 10</code></pre>
+            <p>On a shared box, the IPs you don't recognize are probably your classmates' homes. On a server you own, an IP you don't recognize is a security-investigation starter. Knowing your own login pattern is half the battle.</p>
+          </div>
+        </details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E1.4</span>Use only keyboard shortcuts to: type <code>ls /var/log</code>, jump to the beginning of the line, change it to <code>sudo ls /var/log</code>, then run it.</p>
+        <details class="drill">
+          <summary>Show answer</summary>
+          <div class="drill-body">
+            <ol>
+              <li>Type <code>ls /var/log</code> — don't hit Enter yet.</li>
+              <li><kbd>Ctrl</kbd>+<kbd>A</kbd> — cursor jumps to the start of the line.</li>
+              <li>Type <code>sudo </code> (with the space) — it inserts before <code>ls</code>.</li>
+              <li><kbd>Ctrl</kbd>+<kbd>E</kbd> — cursor jumps to end (not strictly needed but good habit).</li>
+              <li><kbd>Enter</kbd> — runs <code>sudo ls /var/log</code>.</li>
+            </ol>
+            <p><code>/var/log</code> is mostly world-readable, but in a habit-forming sense, <kbd>Ctrl</kbd>+<kbd>A</kbd> is one of the most useful shortcuts you'll learn.</p>
+          </div>
+        </details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E1.5</span>Find the most recent command in your history that contained the word <code>pwd</code>. Run it again without retyping it.</p>
+        <details class="drill">
+          <summary>Show answer</summary>
+          <div class="drill-body">
+            <p><kbd>Ctrl</kbd>+<kbd>R</kbd>, then type <code>pwd</code>. Bash searches backwards through your history. Press <kbd>Enter</kbd> to run, or <kbd>→</kbd> to edit before running.</p>
+            <p>Alternative: <code>history | grep pwd</code>, find the number, then <code>!&lt;number&gt;</code> to re-run.</p>
+          </div>
+        </details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E1.6</span>Open a second terminal/SSH session to the same box. In session A, type a multi-line command (don't press Enter). In session B, run <code>w</code>. Does session A's incomplete command appear?</p>
+        <details class="drill">
+          <summary>Show answer</summary>
+          <div class="drill-body">
+            <p>No. <code>w</code> shows the <em>currently running</em> process per terminal — and while you're still typing into the prompt, the <strong>bash process itself</strong> is what's running. The text you've typed lives in bash's in-memory buffer, not in any process list. This is reassuring: you can compose a long command without other users on a shared box seeing it half-formed.</p>
+          </div>
+        </details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E1.7</span>Without leaving your current shell, SSH from your local box to itself (yes, really): <code>ssh yourname@localhost</code>. Run <code>w</code>. How many of "you" are logged in?</p>
+        <details class="drill">
+          <summary>Show answer</summary>
+          <div class="drill-body">
+            <p>You should see two entries for your username — the original local shell and the new SSH session. This is exactly how nested SSH works on real systems. <code>exit</code> peels one off. You can chain <code>ssh A → ssh B → ssh C</code> and <code>exit</code> brings you back one hop at a time.</p>
+            <p>If <code>ssh localhost</code> says <em>"Connection refused,"</em> the SSH server isn't running. On Ubuntu: <code>sudo systemctl status ssh</code> to check, <code>sudo systemctl enable --now ssh</code> to start it.</p>
+          </div>
+        </details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E1.8</span>Change your password to something <em>different</em>, then change it back.</p>
+        <details class="drill">
+          <summary>Show answer</summary>
+          <div class="drill-body">
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>passwd
+<span class="tok-comment"># Old: &lt;type your current password — no characters shown, that's normal&gt;</span>
+<span class="tok-comment"># New: &lt;type the new one&gt;</span>
+<span class="tok-comment"># Retype new: &lt;type it again&gt;</span>
+
+<span class="tok-prompt">$ </span>passwd
+<span class="tok-comment"># Now reverse it back to the original.</span></code></pre>
+            <p>If the system complains <em>"password too similar"</em> or <em>"based on a dictionary word,"</em> it's PAM's password-quality module doing its job. Pick something more complex.</p>
+            <p><strong>Important:</strong> in the lab worksheet, you need to paste the output of <code>passwd</code>. The output won't include the passwords themselves — just lines like <em>"Changing password for yourname / Current password: / New password: / Retype new password: / passwd: password updated successfully"</em>. That last line is what proves it worked.</p>
+          </div>
+        </details>
+      </div>
+
+      <h2 id="scenario"><span class="secnum">§7</span>Real-world sysadmin scenario</h2>
+      <p><strong>Tuesday, 11:30 AM.</strong> You start your shift. Slack has a message from the night-before sysadmin: <em>"Did some patching on web-03 last night, looks fine."</em></p>
+      <p>You SSH in:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>ssh you@web-03</code></pre>
+      <p>You're at the prompt. <strong>Now what?</strong></p>
+      <p>The textbook answer is "trust your colleague and move on." The <em>good sysadmin</em> answer is <strong>verify cheaply</strong>:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>whoami                     <span class="tok-comment"># confirm I'm me, not stuck as someone's session</span>
+<span class="tok-prompt">$ </span>uptime                     <span class="tok-comment"># uptime: 8 hours.  Reboot last night — checks out.</span>
+<span class="tok-prompt">$ </span>last reboot | head -3      <span class="tok-comment"># confirm only one recent reboot, nothing weird.</span>
+<span class="tok-prompt">$ </span>w                          <span class="tok-comment"># who else is on?  Just me.  Good.</span>
+<span class="tok-prompt">$ </span>systemctl --failed         <span class="tok-comment"># any unit that didn't come back?  (Module 17.)</span>
+<span class="tok-prompt">$ </span>df -h                      <span class="tok-comment"># any filesystem above 80%?  Patching can fill /boot.</span></code></pre>
+      <p>Total time: 30 seconds. In return:</p>
+      <ul>
+        <li>You <strong>caught it in advance</strong> if a service silently failed to restart.</li>
+        <li>You have a <strong>written paper trail</strong> if something breaks later: <em>"I checked at 11:30 and these were fine."</em></li>
+        <li>You've <strong>proven to your fingers</strong> that you can do this routine without thinking — so when there's a real incident, the diagnostic loop is already muscle memory.</li>
+      </ul>
+      <p>That habit is the difference between <em>a person who knows commands</em> and <em>a sysadmin</em>.</p>
+
+      <h2 id="recap"><span class="secnum">§8</span>What to remember</h2>
+      <ul>
+        <li>The shell is a <strong>REPL</strong> — read input, run program, print prompt, repeat.</li>
+        <li><code>$</code> prompt = regular user; <code>#</code> prompt = root. Watch this constantly.</li>
+        <li>SSH is just "a way to get to a remote shell" — once connected, everything else is the same.</li>
+        <li>The opening of every session: <code>whoami</code>, <code>hostname</code>, <code>pwd</code>. Cheap, fast, prevents disasters.</li>
+        <li><kbd>Tab</kbd> and <kbd>Ctrl</kbd>+<kbd>R</kbd> will save you more time than any other shortcuts.</li>
+        <li>A dropped SSH session kills its child processes — for long jobs we'll need <code>tmux</code> (module 11).</li>
+      </ul>
+
+      <a class="next-card" href="02-filesystem-navigation.html">
+        <span class="label">NEXT · MODULE 02</span>
+        <span class="title">Filesystem navigation</span>
+        <span class="desc">Paths, the FHS, and moving around like you've been here for years.</span>
+      </a>
+
+    </article>
+
+    <footer class="colophon">
+      <p>NCS 205 handbook · module 01 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
+    </footer>
+
+  </main>
+
+  <aside class="toc" aria-label="On this page">
+    <div class="toc-title">On this page</div>
+    <ul>
+      <li><a href="#why">§1 Why this matters</a></li>
+      <li><a href="#mental-model">§2 Mental model</a></li>
+      <li><a href="#commands">§3 Core commands</a></li>
+      <li><a href="#walkthrough">§4 Walkthrough</a></li>
+      <li><a href="#gotchas">§5 Gotchas</a></li>
+      <li><a href="#drills">§6 Exercises</a></li>
+      <li><a href="#scenario">§7 Scenario</a></li>
+      <li><a href="#recap">§8 What to remember</a></li>
+    </ul>
+  </aside>
+
+</div>
+
+<script src="assets/site.js"></script>
+</body>
+</html>

@@ -133,6 +133,37 @@ There is no shortcut to being good at Linux. There is only **type, read, think, 
 
 ---
 
+## Deploying to GitHub Pages (free)
+
+This whole repo is static — push it to GitHub, flip a switch, and it's a live site.
+
+```sh
+# 1. Create an empty repo on github.com (no README, no .gitignore)
+#    — let's say it's named "mentors-guide-linux"
+# 2. From inside docs/ on your machine:
+git remote add origin git@github.com:YOUR-USERNAME/mentors-guide-linux.git
+git branch -M main
+git push -u origin main
+```
+
+Then on github.com:
+
+1. Go to **Settings → Pages**
+2. Under "Build and deployment", **Source** = "Deploy from a branch"
+3. **Branch** = `main` / `(root)` → **Save**
+
+GitHub will build for a minute, then the site is live at:
+
+```
+https://YOUR-USERNAME.github.io/mentors-guide-linux/
+```
+
+Custom domain? Add it in **Settings → Pages → Custom domain** and create a CNAME record at your DNS provider pointing to `YOUR-USERNAME.github.io`. Free TLS included.
+
+The `.nojekyll` file in this repo tells GitHub Pages to serve the files as-is without trying to run them through Jekyll. If you ever rename a file to start with `_`, that's still safe because of `.nojekyll`.
+
+---
+
 ## Acknowledgements
 
 Built around the lab worksheets of NCS 205 (SUNY Polytechnic Institute, Spring 2026). The course material itself remains the property of SUNY Poly and its instructors; this companion fills a teaching gap they left open by design.

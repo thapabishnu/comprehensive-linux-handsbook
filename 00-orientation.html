@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>00 · Orientation &amp; setup — Mentor's Guide to Linux</title>
+<meta name="description" content="Set up WSL/VM/cloud, build the practice sandbox, and adopt the sysadmin mindset before running your first command." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <div class="brand">
+    <a href="index.html" style="border:none; color: inherit; display: contents;">
+      <span class="mark">/&gt;</span>
+      <span>The Mentor's Guide to Linux</span>
+    </a>
+    <span class="sub">NCS 205 handbook</span>
+  </div>
+  <div class="right">
+    <span class="crumbs"><a href="index.html" style="color: inherit; border: none;">HOME</a> / <strong>MODULE 00</strong></span>
+    <button class="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+      <span class="icon">☼</span><span class="label">PAPER</span>
+    </button>
+    <button class="menu-btn" aria-label="Open table of contents" aria-expanded="false">MENU</button>
+  </div>
+</header>
+
+<div class="shell">
+
+  <aside class="sidebar" id="sidebar" aria-label="Module navigation"></aside>
+
+  <main class="main" id="main">
+
+    <article class="module">
+
+      <div class="meta-row">
+        <span><span class="label">MODULE</span>00</span>
+        <span><span class="label">MAPS TO</span>—</span>
+        <span><span class="label">TIME</span>~25 min</span>
+      </div>
+
+      <h1>Orientation: setting up &amp; thinking like a sysadmin</h1>
+
+      <p class="lede"><em>Before</em> the first command, we need three things: a real Linux box, a sample-data folder for drills, and the mindset.</p>
+
+      <h2 id="why"><span class="secnum">§1</span>Why this matters</h2>
+      <p>Reading about Linux is roughly as effective as reading about swimming. You will not actually learn until your fingers are on the keyboard, watching a real shell respond to you. The next 10 minutes set up that loop.</p>
+      <p>You also need a sysadmin's mindset. A sysadmin's job is rarely "type the right command." It's:</p>
+      <ol>
+        <li>Observe carefully (what <em>exactly</em> did the system say?)</li>
+        <li>Form a hypothesis (what could cause that?)</li>
+        <li>Test it cheaply (run something safe that confirms or refutes)</li>
+        <li>Only then change state — the dangerous step: <code>rm</code>, <code>kill</code>, <code>chmod</code>, restart</li>
+      </ol>
+      <p>If you skip steps 1–3 and jump to step 4, you'll make outages worse. Every module in this guide is going to drill that loop into you.</p>
+
+      <h2 id="pick-env"><span class="secnum">§2</span>Pick your Linux environment</h2>
+      <p>You need <em>somewhere</em> to run real Linux. Pick one. You can change later.</p>
+
+      <h3>Option A — WSL on Windows <span style="color: var(--accent); font-weight: normal; font-size: 0.78em; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.05em; margin-left: 0.5em;">recommended for you</span></h3>
+      <p>You're on Windows 11. WSL gives you a real Ubuntu kernel without a VM. Open PowerShell <strong>as Administrator</strong> and run:</p>
+<pre data-lang="powershell"><code>wsl --install -d Ubuntu</code></pre>
+      <p>Reboot when it asks. After reboot it'll open an Ubuntu terminal and ask you to make a username and password. Pick something you'll remember. <strong>Write down the password</strong> — you'll need it for <code>sudo</code>.</p>
+      <p>From then on, just type <code>wsl</code> in PowerShell or open "Ubuntu" from the Start menu.</p>
+
+      <h3>Option B — A Linux VM (VirtualBox / VMware / Hyper-V)</h3>
+      <p>Download an <strong>Ubuntu Server 22.04 LTS</strong> ISO and create a VM. Give it 2 CPU, 2 GB RAM, 20 GB disk. Install with default options, <strong>enable OpenSSH server</strong> when the installer asks.</p>
+
+      <h3>Option C — A cloud VPS</h3>
+      <p>DigitalOcean, Linode, Vultr, Hetzner, AWS Lightsail — any of them. A $5/month box is plenty for everything in this guide. Pick <strong>Ubuntu 22.04 LTS</strong> or <strong>Debian 12</strong>.</p>
+
+      <h3>Option D — The class shell server (<code>lab.ncs205.net</code>)</h3>
+      <p>If you're enrolled, you have an account. SSH in with the credentials from your instructor. The labs reference paths under <code>/opt/pub/ncs205/...</code> that only exist on that server — for those, you'll need to be logged in there. <strong>Everything else in this guide works on any Linux.</strong></p>
+
+      <div class="callout callout-mentor">
+        <span class="callout-label">Mentor note</span>
+        <p>I recommend Option A <em>and</em> Option D. Use WSL for daily practice (instant, offline, you can break it freely). Use the class server when a specific lab requires it.</p>
+      </div>
+
+      <h2 id="sanity"><span class="secnum">§3</span>First sanity check</h2>
+      <p>Once you have a Linux shell open, run these — exactly:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>whoami
+<span class="tok-prompt">$ </span>hostname
+<span class="tok-prompt">$ </span>uname -a
+<span class="tok-prompt">$ </span>pwd</code></pre>
+      <p>You should see your username, the box's name, the kernel version, and your current directory (probably <code>/home/&lt;your-username&gt;</code>). If those work, <strong>you're set</strong>.</p>
+
+      <h2 id="sandbox"><span class="secnum">§4</span>Set up the practice sandbox</h2>
+      <p>Throughout this guide we'll reference a small set of practice files. Let's create them now, once, so every drill has something to chew on.</p>
+      <p>Save this as <code>~/setup-sample-data.sh</code> (we'll cover how to create files properly in module 03 — for now just paste it in via <code>nano ~/setup-sample-data.sh</code>, then save with <kbd>Ctrl</kbd>+<kbd>O</kbd> <kbd>Enter</kbd> <kbd>Ctrl</kbd>+<kbd>X</kbd>):</p>
+
+<pre data-lang="bash"><code><span class="tok-comment">#!/bin/bash</span>
+<span class="tok-comment"># NCS 205 mentor's guide — practice sandbox setup</span>
+set -euo pipefail
+
+SANDBOX="$HOME/ncs205-sandbox"
+echo "Creating practice sandbox at $SANDBOX"
+mkdir -p "$SANDBOX"
+cd "$SANDBOX"
+
+<span class="tok-comment"># --- module 04 globbing files ---</span>
+mkdir -p globbing
+cd globbing
+touch A 'A*' 'A,' AA AB ABC AC AD 'B,' BA BB BC BD BE BF
+cd ..
+
+<span class="tok-comment"># --- text files for grep / sed / awk ---</span>
+mkdir -p text
+cat &gt; text/names.txt &lt;&lt;'EOF'
+Anderson, Sarah
+Brown, James
+Chen, Mei
+Davis, Robert
+Evans, Priya
+Foster, Liam
+Garcia, Sofia
+Hassan, Omar
+Ito, Yuki
+Jackson, Kira
+Khan, Aisha
+Lopez, Carlos
+Mason, Emma
+Nguyen, Linh
+O'Brien, Sean
+Patel, Raj
+Quinn, Maya
+Robinson, Marcus
+Sato, Hana
+Tanaka, Akira
+EOF
+
+cat &gt; text/access.log &lt;&lt;'EOF'
+192.168.1.10 - - [16/May/2026:10:01:22 +0000] "GET /index.html HTTP/1.1" 200 1842
+192.168.1.10 - - [16/May/2026:10:01:23 +0000] "GET /style.css HTTP/1.1" 200 442
+10.0.0.55 - - [16/May/2026:10:02:01 +0000] "POST /api/login HTTP/1.1" 401 87
+10.0.0.55 - - [16/May/2026:10:02:09 +0000] "POST /api/login HTTP/1.1" 401 87
+10.0.0.55 - - [16/May/2026:10:02:14 +0000] "POST /api/login HTTP/1.1" 401 87
+10.0.0.55 - - [16/May/2026:10:02:18 +0000] "POST /api/login HTTP/1.1" 200 421
+192.168.1.10 - - [16/May/2026:10:03:00 +0000] "GET /dashboard HTTP/1.1" 200 9831
+172.16.4.7 - - [16/May/2026:10:03:45 +0000] "GET /admin HTTP/1.1" 403 162
+172.16.4.7 - - [16/May/2026:10:04:01 +0000] "GET /etc/passwd HTTP/1.1" 404 28
+192.168.1.11 - - [16/May/2026:10:05:30 +0000] "GET /index.html HTTP/1.1" 500 0
+EOF
+
+cat &gt; text/employees.csv &lt;&lt;'EOF'
+id,name,dept,salary,start_date
+101,Anderson,eng,95000,2019-03-15
+102,Brown,sales,72000,2020-06-01
+103,Chen,eng,110000,2017-11-08
+104,Davis,hr,65000,2021-02-19
+105,Evans,eng,98000,2022-08-30
+106,Foster,sales,68000,2023-01-12
+107,Garcia,eng,120000,2016-04-22
+108,Hassan,ops,88000,2020-10-05
+109,Ito,ops,91000,2018-09-14
+110,Jackson,sales,74000,2024-03-01
+EOF
+
+cat &gt; text/lorem.txt &lt;&lt;'EOF'
+The quick brown fox jumps over the lazy dog.
+Linux is the kernel; GNU is the userland.
+Permissions are read, write, and execute.
+Stdin, stdout, and stderr are the three standard streams.
+A pipe sends one program's stdout to another's stdin.
+Regular expressions describe patterns in text.
+sed is a stream editor; awk is a pattern-action language.
+Cron runs jobs on a schedule; systemd timers do the same thing better.
+Logs live under /var/log on most distributions.
+The root user can do anything; sudo lets others borrow that power.
+EOF
+
+<span class="tok-comment"># --- a directory tree for find drills ---</span>
+mkdir -p tree/a/b/c
+mkdir -p tree/a/b/d
+mkdir -p tree/x/y
+touch tree/a/b/c/deep.txt
+touch tree/a/b/d/notes.md
+touch tree/a/old.log
+touch tree/x/y/report.csv
+touch tree/x/y/report.tmp
+touch tree/readme.md
+
+echo "Done. Explore with:  cd $SANDBOX &amp;&amp; ls -R"</code></pre>
+
+      <p>Then run it:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>chmod +x ~/setup-sample-data.sh
+<span class="tok-prompt">$ </span>~/setup-sample-data.sh</code></pre>
+      <p>You should see <code>~/ncs205-sandbox/</code> with <code>globbing/</code>, <code>text/</code>, and <code>tree/</code> subdirectories. <strong>Every drill in this guide assumes that sandbox exists.</strong> If you delete it or move it, just re-run the script.</p>
+
+      <h2 id="mindset"><span class="secnum">§5</span>The sysadmin mindset, in five rules</h2>
+      <p>I'll mention these often. Tattoo them in:</p>
+      <ol>
+        <li><strong>Read the error message.</strong> The system told you exactly what's wrong. Most of the time the answer is in the text you skimmed past.</li>
+        <li><strong>Know where you are before you act.</strong> <code>pwd</code> before <code>rm</code>. Always.</li>
+        <li><strong>Look before you leap.</strong> <code>ls</code> before <code>cp</code>. <code>cat</code> before <code>&gt;</code>. <code>--dry-run</code> if the tool supports it.</li>
+        <li><strong>Smallest change first.</strong> If you have a hypothesis, test it with the cheapest, most reversible thing you can do. Don't reboot until you've at least looked at the logs.</li>
+        <li><strong>Leave a trail.</strong> When you change something on a production box, leave a note (<code>/root/CHANGELOG</code>, a git commit, a Slack message — anything). Future-you and your teammates will thank you.</li>
+      </ol>
+
+      <h2 id="tools"><span class="secnum">§6</span>Tools that make your life better</h2>
+      <p>While you have a fresh box, install these now. They'll make every following module faster.</p>
+<pre data-lang="sh"><code><span class="tok-comment"># Debian/Ubuntu/WSL:</span>
+<span class="tok-prompt">$ </span>sudo apt update
+<span class="tok-prompt">$ </span>sudo apt install -y vim less tree htop curl wget jq man-db git tmux
+
+<span class="tok-comment"># RHEL/Fedora:</span>
+<span class="tok-prompt">$ </span>sudo dnf install -y vim less tree htop curl wget jq man-db git tmux</code></pre>
+      <ul>
+        <li><code>tree</code> — visualize directory trees (we'll use it a lot)</li>
+        <li><code>less</code> — better pager than <code>more</code></li>
+        <li><code>htop</code> — much nicer <code>top</code></li>
+        <li><code>jq</code> — JSON processor for when you start hitting APIs</li>
+        <li><code>tmux</code> — survive disconnects in long SSH sessions</li>
+        <li><code>man-db</code> — full man pages (<code>man ls</code>, <code>man bash</code>, etc.) — your most important reference</li>
+      </ul>
+
+      <h2 id="drills"><span class="secnum">§7</span>On-the-spot exercises</h2>
+      <p>You're not getting away from drills even in the orientation. Try these now:</p>
+
+      <div class="exercise">
+        <p><span class="ex-id">E0.1</span>Run <code>whoami</code>, <code>hostname</code>, and <code>pwd</code> and write down what each returns. Why are those three the first things a sysadmin checks when they log into a new box?</p>
+        <details class="drill">
+          <summary>Show answer</summary>
+          <div class="drill-body">
+            <p><code>whoami</code> — proves <em>which user</em> you are. Critical because <code>rm -rf /</code> as <code>root</code> ends careers; the same command as a normal user usually fails harmlessly.</p>
+            <p><code>hostname</code> — proves <em>which box</em> you're on. SSH'd into the wrong server is one of the most common ways to take down production.</p>
+            <p><code>pwd</code> — proves <em>which directory</em> you're in. Many destructive commands operate on the current directory.</p>
+            <p>Together they answer: <em>"Who am I, where am I, what am I about to do?"</em> — the start of the observe step.</p>
+          </div>
+        </details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E0.2</span>Run <code>man man</code>. What's section 1 of the manual? What's section 5? What's section 8?</p>
+        <details class="drill">
+          <summary>Show answer</summary>
+          <div class="drill-body">
+            <ul>
+              <li><strong>Section 1</strong> — user commands (everyday programs like <code>ls</code>, <code>grep</code>)</li>
+              <li><strong>Section 5</strong> — file formats (like <code>man 5 passwd</code> for the layout of <code>/etc/passwd</code>)</li>
+              <li><strong>Section 8</strong> — sysadmin/system commands (like <code>useradd</code>, <code>mount</code>)</li>
+            </ul>
+            <p>You'll see the section number in parentheses after a command name: <code>ls(1)</code> means "ls, section 1." Knowing the sections lets you disambiguate things like <code>passwd(1)</code> (the command) vs <code>passwd(5)</code> (the file).</p>
+          </div>
+        </details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E0.3</span>Without looking it up, predict what <code>uname -a</code> shows vs <code>uname -r</code>. Then run both and check.</p>
+        <details class="drill">
+          <summary>Show answer</summary>
+          <div class="drill-body">
+            <p><code>uname -a</code> — <strong>all</strong> info: kernel name, hostname, kernel release, kernel version, machine architecture, OS.</p>
+            <p><code>uname -r</code> — only the <strong>release</strong> (kernel version string like <code>5.15.0-91-generic</code>).</p>
+            <p><code>-r</code> is what you want when you're looking up "is my kernel old enough to be affected by CVE-XXXX?"</p>
+          </div>
+        </details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E0.4</span>Create a file called <code>practice.txt</code> in your home directory with the line "Hello, Linux." inside. Don't worry about which method yet; we'll do this many ways later.</p>
+        <details class="drill">
+          <summary>Show answer</summary>
+          <div class="drill-body">
+            <p>Many valid ways — any of these work:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>echo "Hello, Linux." &gt; ~/practice.txt</code></pre>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>nano ~/practice.txt        <span class="tok-comment"># type the text, Ctrl+O, Enter, Ctrl+X</span></code></pre>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cat &gt; ~/practice.txt
+Hello, Linux.
+[Ctrl+D]</code></pre>
+            <p>We'll meet <code>&gt;</code> (redirection) in module 08 and <code>nano</code>/<code>vi</code> editors in module 06. For now, just confirm the file exists with <code>cat ~/practice.txt</code>.</p>
+          </div>
+        </details>
+      </div>
+
+      <div class="exercise">
+        <p><span class="ex-id">E0.5</span>Your boss messages you: <em>"Server feels slow. Can you check?"</em> You SSH in. What are the <strong>first three commands</strong> you'd run? (No rigid answer — think about it.)</p>
+        <details class="drill">
+          <summary>Show one good answer</summary>
+          <div class="drill-body">
+            <p>A solid opening:</p>
+            <ol>
+              <li><code>uptime</code> — load averages over 1/5/15 min. If 1-min is way higher than 15-min, it's a recent spike.</li>
+              <li><code>top</code> (or <code>htop</code>) — what's eating CPU and memory <em>right now</em>?</li>
+              <li><code>df -h</code> — is a disk full? A full <code>/</code> or <code>/var</code> causes "slow" symptoms even when CPU looks fine.</li>
+            </ol>
+            <p>The point isn't this exact list — the point is you start by <strong>observing</strong> before you start doing things. We'll come back to this in module 22.</p>
+          </div>
+        </details>
+      </div>
+
+      <h2 id="scenario"><span class="secnum">§8</span>Real-world sysadmin scenario</h2>
+      <p><strong>Friday, 4:55 PM.</strong> You're packing up. Slack pings: <em>"Customer portal is down."</em></p>
+      <p>You SSH in. Your first instinct is to restart the web service. <strong>Don't.</strong></p>
+      <p>A senior sysadmin does this instead:</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>ssh prod-web-01
+<span class="tok-prompt">$ </span>whoami       <span class="tok-comment"># confirm I'm not root yet (good — less likely to fat-finger)</span>
+<span class="tok-prompt">$ </span>hostname     <span class="tok-comment"># confirm I'm on the right box</span>
+<span class="tok-prompt">$ </span>uptime       <span class="tok-comment"># has it been up for a while? recent reboot?</span>
+<span class="tok-prompt">$ </span>df -h        <span class="tok-comment"># is the disk full? (extremely common cause of "down")</span>
+<span class="tok-prompt">$ </span>journalctl -u nginx --since "10 min ago" | tail -50   <span class="tok-comment"># what does nginx say?</span></code></pre>
+      <p>Within 60 seconds, you have <em>evidence</em>. Maybe <code>/var</code> is at 100% because logs grew. Maybe nginx is fine but the upstream app crashed. Maybe the box was rebooted by autopatch and a service didn't come back. <strong>Each of those needs a different fix.</strong> Restarting blindly would mask the symptom <em>or</em> make it worse (e.g., if it was an OOM kill from a memory leak, restarting buys 30 minutes before the next page).</p>
+      <p>We'll cover every command in that snippet — <code>journalctl</code>, <code>df</code>, <code>systemctl</code> — in later modules. For now, just internalize: <strong>diagnose, then act.</strong></p>
+
+      <h2 id="recap"><span class="secnum">§9</span>What to remember</h2>
+      <ul>
+        <li>You need a real Linux environment. WSL on this Windows box is the fastest path.</li>
+        <li>The <code>~/ncs205-sandbox/</code> is set up — keep it; every drill uses it.</li>
+        <li>The five rules: read the error, know where you are, look before you leap, smallest change first, leave a trail.</li>
+        <li>"Who am I? Where am I? What am I doing?" — the opening of every troubleshooting session.</li>
+      </ul>
+
+      <a class="next-card" href="01-shell-and-ssh.html">
+        <span class="label">NEXT · MODULE 01</span>
+        <span class="title">Shell access &amp; SSH</span>
+        <span class="desc">Now that you have a shell, let's understand what's actually happening when you log in to it.</span>
+      </a>
+
+    </article>
+
+    <footer class="colophon">
+      <p>NCS 205 handbook · module 00 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
+    </footer>
+
+  </main>
+
+  <aside class="toc" aria-label="On this page">
+    <div class="toc-title">On this page</div>
+    <ul>
+      <li><a href="#why">§1 Why this matters</a></li>
+      <li><a href="#pick-env">§2 Pick your environment</a></li>
+      <li><a href="#sanity">§3 First sanity check</a></li>
+      <li><a href="#sandbox">§4 The practice sandbox</a></li>
+      <li><a href="#mindset">§5 The five rules</a></li>
+      <li><a href="#tools">§6 Tools to install</a></li>
+      <li><a href="#drills">§7 Exercises</a></li>
+      <li><a href="#scenario">§8 Sysadmin scenario</a></li>
+      <li><a href="#recap">§9 What to remember</a></li>
+    </ul>
+  </aside>
+
+</div>
+
+<script src="assets/site.js"></script>
+</body>
+</html>
