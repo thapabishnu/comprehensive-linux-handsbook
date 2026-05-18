@@ -19,7 +19,7 @@
       <span class="mark">/&gt;</span>
       <span>The Mentor's Guide to Linux</span>
     </a>
-    <span class="sub">NCS 205 handbook</span>
+    
   </div>
   <div class="right">
     <span class="crumbs"><a href="index.html" style="color: inherit; border: none;">HOME</a> / <strong>MODULE 10</strong></span>
@@ -37,7 +37,7 @@
     <article class="module">
       <div class="meta-row">
         <span><span class="label">MODULE</span>10</span>
-        <span><span class="label">MAPS TO</span>LAB 23</span>
+        
         <span><span class="label">TIME</span>~30 min</span>
       </div>
 
@@ -122,7 +122,7 @@
       </table>
 
       <h2 id="walkthrough"><span class="secnum">§5</span>Guided walkthrough</h2>
-<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cd ~/ncs205-sandbox/tree/
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cd ~/linux-sandbox/tree/
 
 <span class="tok-comment"># the simplest find</span>
 <span class="tok-prompt">$ </span>find .                              <span class="tok-comment"># every path, recursively</span>
@@ -160,8 +160,8 @@
 <span class="tok-prompt">$ </span>find . -type f -print0 | xargs -0 wc -l
 
 <span class="tok-comment"># age-based cleanup (DRY-RUN FIRST)</span>
-<span class="tok-prompt">$ </span>find ~/ncs205-sandbox -name '*.tmp' -mtime +0 -print
-<span class="tok-comment"># find ~/ncs205-sandbox -name '*.tmp' -mtime +0 -delete</span></code></pre>
+<span class="tok-prompt">$ </span>find ~/linux-sandbox -name '*.tmp' -mtime +0 -print
+<span class="tok-comment"># find ~/linux-sandbox -name '*.tmp' -mtime +0 -delete</span></code></pre>
 
       <p>Note the <em>print-then-delete</em> pattern. Bake it into your habits.</p>
 
@@ -192,19 +192,19 @@
       </div>
 
       <h2 id="drills"><span class="secnum">§7</span>On-the-spot exercises</h2>
-      <p>Use the sandbox tree at <code>~/ncs205-sandbox/tree/</code>.</p>
+      <p>Use the sandbox tree at <code>~/linux-sandbox/tree/</code>.</p>
 
       <div class="exercise">
         <p><span class="ex-id">E10.1</span>List every <code>.md</code> file under the tree.</p>
         <details class="drill"><summary>Show answer</summary><div class="drill-body">
-<pre data-lang="sh"><code><span class="tok-prompt">$ </span>find ~/ncs205-sandbox/tree -name '*.md'</code></pre>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>find ~/linux-sandbox/tree -name '*.md'</code></pre>
         </div></details>
       </div>
 
       <div class="exercise">
         <p><span class="ex-id">E10.2</span>List every directory under the tree.</p>
         <details class="drill"><summary>Show answer</summary><div class="drill-body">
-<pre data-lang="sh"><code><span class="tok-prompt">$ </span>find ~/ncs205-sandbox/tree -type d</code></pre>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>find ~/linux-sandbox/tree -type d</code></pre>
         </div></details>
       </div>
 
@@ -239,18 +239,18 @@
       </div>
 
       <div class="exercise">
-        <p><span class="ex-id">E10.7</span>Delete every <code>*.tmp</code> file in <code>~/ncs205-sandbox/tree/</code>. <strong>First print</strong> what would be deleted, then delete.</p>
+        <p><span class="ex-id">E10.7</span>Delete every <code>*.tmp</code> file in <code>~/linux-sandbox/tree/</code>. <strong>First print</strong> what would be deleted, then delete.</p>
         <details class="drill"><summary>Show answer</summary><div class="drill-body">
-<pre data-lang="sh"><code><span class="tok-prompt">$ </span>find ~/ncs205-sandbox/tree -name '*.tmp' -print     <span class="tok-comment"># confirm</span>
-<span class="tok-prompt">$ </span>find ~/ncs205-sandbox/tree -name '*.tmp' -delete    <span class="tok-comment"># actually delete</span></code></pre>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>find ~/linux-sandbox/tree -name '*.tmp' -print     <span class="tok-comment"># confirm</span>
+<span class="tok-prompt">$ </span>find ~/linux-sandbox/tree -name '*.tmp' -delete    <span class="tok-comment"># actually delete</span></code></pre>
           <p>The print-then-delete habit. Internalize it.</p>
         </div></details>
       </div>
 
       <div class="exercise">
-        <p><span class="ex-id">E10.8</span>Recursively <code>chmod 644</code> every file (but not directory) under <code>~/ncs205-sandbox/</code>.</p>
+        <p><span class="ex-id">E10.8</span>Recursively <code>chmod 644</code> every file (but not directory) under <code>~/linux-sandbox/</code>.</p>
         <details class="drill"><summary>Show answer</summary><div class="drill-body">
-<pre data-lang="sh"><code><span class="tok-prompt">$ </span>find ~/ncs205-sandbox -type f -exec chmod 644 {} +</code></pre>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>find ~/linux-sandbox -type f -exec chmod 644 {} +</code></pre>
         </div></details>
       </div>
 
@@ -300,7 +300,7 @@
     </article>
 
     <footer class="colophon">
-      <p>NCS 205 handbook · module 10 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
+      <p>Module 10 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
     </footer>
   </main>
 

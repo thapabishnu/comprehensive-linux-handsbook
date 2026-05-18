@@ -1,6 +1,5 @@
 # 10 — find and xargs
 
-> *Maps to:* NCS 205 Lab 23.
 
 ---
 
@@ -98,7 +97,7 @@ Key flags:
 ## 5. Guided walkthrough
 
 ```sh
-cd ~/ncs205-sandbox/tree/
+cd ~/linux-sandbox/tree/
 
 # the simplest find
 find .                              # every path, recursively
@@ -136,8 +135,8 @@ find . -type f -exec wc -l {} +
 find . -type f -print0 | xargs -0 wc -l
 
 # age-based cleanup (DRY-RUN FIRST)
-find ~/ncs205-sandbox -name '*.tmp' -mtime +0 -print    # show
-# find ~/ncs205-sandbox -name '*.tmp' -mtime +0 -delete # actually delete
+find ~/linux-sandbox -name '*.tmp' -mtime +0 -print    # show
+# find ~/linux-sandbox -name '*.tmp' -mtime +0 -delete # actually delete
 ```
 
 Note the *print-then-delete* pattern. Bake it into your habits.
@@ -159,14 +158,14 @@ Note the *print-then-delete* pattern. Bake it into your habits.
 
 ## 7. On-the-spot exercises
 
-Use the sandbox tree at `~/ncs205-sandbox/tree/`.
+Use the sandbox tree at `~/linux-sandbox/tree/`.
 
 **E10.1** — List every `.md` file under the tree.
 
 <details><summary>Show answer</summary>
 
 ```sh
-find ~/ncs205-sandbox/tree -name '*.md'
+find ~/linux-sandbox/tree -name '*.md'
 ```
 </details>
 
@@ -175,7 +174,7 @@ find ~/ncs205-sandbox/tree -name '*.md'
 <details><summary>Show answer</summary>
 
 ```sh
-find ~/ncs205-sandbox/tree -type d
+find ~/linux-sandbox/tree -type d
 ```
 </details>
 
@@ -225,24 +224,24 @@ sudo find /var/log/ -type f -size +1M -print
 ```
 </details>
 
-**E10.7** — Delete every `*.tmp` file in `~/ncs205-sandbox/tree/`. **First print** what would be deleted, then delete.
+**E10.7** — Delete every `*.tmp` file in `~/linux-sandbox/tree/`. **First print** what would be deleted, then delete.
 
 <details><summary>Show answer</summary>
 
 ```sh
-find ~/ncs205-sandbox/tree -name '*.tmp' -print     # confirm list
-find ~/ncs205-sandbox/tree -name '*.tmp' -delete    # actually delete
+find ~/linux-sandbox/tree -name '*.tmp' -print     # confirm list
+find ~/linux-sandbox/tree -name '*.tmp' -delete    # actually delete
 ```
 
 This is the print-then-delete habit. Internalize it.
 </details>
 
-**E10.8** — Recursively `chmod 644` every file (but not directory) under `~/ncs205-sandbox/`.
+**E10.8** — Recursively `chmod 644` every file (but not directory) under `~/linux-sandbox/`.
 
 <details><summary>Show answer</summary>
 
 ```sh
-find ~/ncs205-sandbox -type f -exec chmod 644 {} +
+find ~/linux-sandbox -type f -exec chmod 644 {} +
 ```
 
 `+` batches paths per `chmod` invocation, way faster than `\;`.

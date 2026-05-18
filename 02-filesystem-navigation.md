@@ -1,7 +1,6 @@
 # 02 — The filesystem and how to move through it
 
 > *Prerequisites:* you have a working shell (`00-orientation.md`, `01-shell-and-ssh.md`).
-> *Maps to:* NCS 205 Lab 2, parts of Lab 5.
 
 ---
 

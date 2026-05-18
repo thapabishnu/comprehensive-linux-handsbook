@@ -43,11 +43,7 @@ Download an **Ubuntu Server 22.04 LTS** ISO and create a VM. Give it 2 CPU, 2 GB
 
 DigitalOcean, Linode, Vultr, Hetzner, AWS Lightsail — any of them. A $5/month box is plenty for everything in this guide. Pick **Ubuntu 22.04 LTS** or **Debian 12**.
 
-### Option D — The class shell server (`lab.ncs205.net`)
-
-If you're enrolled, you have an account. SSH in with the credentials from your instructor. The labs reference paths under `/opt/pub/ncs205/...` that only exist on that server — for those, you'll need to be logged in there. **Everything else in this guide works on any Linux.**
-
-> **Mentor note:** I recommend Option A *and* Option D. Use WSL for daily practice (instant, offline, you can break it freely). Use the class server when a specific lab requires it.
+> **Mentor note:** I recommend Option A for daily practice — WSL is instant, offline, and you can break it freely on your laptop. If you also have a cloud VPS (Option C), use it later for anything that involves real networking or systemd timers.
 
 ---
 
@@ -74,10 +70,10 @@ Save this as `~/setup-sample-data.sh` (we'll cover how to create files properly 
 
 ```sh
 #!/bin/bash
-# NCS 205 mentor's guide — practice sandbox setup
+# Linux mentor handbook — practice sandbox setup
 set -euo pipefail
 
-SANDBOX="$HOME/ncs205-sandbox"
+SANDBOX="$HOME/linux-sandbox"
 echo "Creating practice sandbox at $SANDBOX"
 mkdir -p "$SANDBOX"
 cd "$SANDBOX"
@@ -174,7 +170,7 @@ chmod +x ~/setup-sample-data.sh
 ~/setup-sample-data.sh
 ```
 
-You should see `~/ncs205-sandbox/` with `globbing/`, `text/`, and `tree/` subdirectories. **Every drill in this guide assumes that sandbox exists.** If you delete it or move it, just re-run the script.
+You should see `~/linux-sandbox/` with `globbing/`, `text/`, and `tree/` subdirectories. **Every drill in this guide assumes that sandbox exists.** If you delete it or move it, just re-run the script.
 
 ---
 
@@ -312,7 +308,7 @@ We'll cover every command in that snippet — `journalctl`, `df`, `systemctl` �
 ## 9. What to remember
 
 - You need a real Linux environment. WSL on this Windows box is the fastest path.
-- The `~/ncs205-sandbox/` is set up — keep it; every drill uses it.
+- The `~/linux-sandbox/` is set up — keep it; every drill uses it.
 - The five rules: read the error, know where you are, look before you leap, smallest change first, leave a trail.
 - "Who am I? Where am I? What am I doing?" — the opening of every troubleshooting session.
 

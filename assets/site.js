@@ -1,4 +1,4 @@
-/* NCS 205 handbook — site behavior
+/* Linux mentor handbook — site behavior
    - sidebar rendered from one data source (MODULES below)
    - theme toggle (persists to localStorage)
    - per-code-block copy buttons
@@ -88,7 +88,7 @@
   }
 
   /* ---------- theme ---------- */
-  const THEME_KEY = 'ncs205.theme';
+  const THEME_KEY = 'linux-guide.theme';
   const root = document.documentElement;
 
   function applyTheme(t) {

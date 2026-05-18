@@ -1,6 +1,5 @@
 # 04 — File globbing: making the shell match files for you
 
-> *Maps to:* NCS 205 Lab 10.
 
 ---
 
@@ -57,10 +56,10 @@ You can combine them: `cp file.txt{,.bak}` is a slick way to make a backup — i
 
 ## 4. Guided walkthrough
 
-The orientation sandbox at `~/ncs205-sandbox/globbing/` was created for this. If you skipped that, re-run `~/setup-sample-data.sh`.
+The orientation sandbox at `~/linux-sandbox/globbing/` was created for this. If you skipped that, re-run `~/setup-sample-data.sh`.
 
 ```sh
-cd ~/ncs205-sandbox/globbing/
+cd ~/linux-sandbox/globbing/
 ls                            # baseline view of the test files
 echo ---
 ls A*                         # everything starting with A
@@ -166,15 +165,15 @@ ls AB 'A*'
 Two separate arguments — give them to `ls`, no need to compress into one glob.
 </details>
 
-**E4.6** — List all PDF files in `/opt/pub/ncs205/submit/collected/` (class shell server only) with `lab2` in the name.
+**E4.6** — List all PDF files in `~/Downloads/` whose name contains `2024`.
 
 <details><summary>Show answer</summary>
 
 ```sh
-ls /opt/pub/ncs205/submit/collected/*lab2*.pdf
+ls ~/Downloads/*2024*.pdf
 ```
 
-The two `*` wildcards let the lab number sit anywhere in the filename.
+The two `*` wildcards let the `2024` token sit anywhere in the filename.
 </details>
 
 **E4.7** — In one command, create a backup of `/etc/hosts` named `hosts.bak` *in the current directory* using brace expansion.

@@ -1,6 +1,5 @@
 # 15 — Environment, PATH, and startup files
 
-> *Maps to:* NCS 205 Lab 56.
 
 ---
 

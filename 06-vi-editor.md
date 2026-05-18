@@ -1,6 +1,5 @@
 # 06 — The vi / vim editor
 
-> *Maps to:* NCS 205 Labs 14–15.
 
 ---
 

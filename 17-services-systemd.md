@@ -1,6 +1,5 @@
 # 17 — Services and systemd
 
-> *Maps to:* NCS 205 Labs 59–60.
 
 ---
 

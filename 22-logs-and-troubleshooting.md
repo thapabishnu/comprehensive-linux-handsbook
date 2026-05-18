@@ -1,6 +1,5 @@
 # 22 — Logs and troubleshooting
 
-> *Maps to:* NCS 205 Labs B1–C1.
 
 ---
 
@@ -314,7 +313,7 @@ Total time: under 5 minutes. Real diagnosis followed by real fix. Notice you *di
 
 ## 10. You finished the handbook 🎓
 
-Twenty-three modules. Twelve hundred exercises. Real scenarios for every one. If you've worked through these, you have the foundation of a real Linux sysadmin — and far more depth than what NCS 205's labs are testing.
+Twenty-three modules. Twelve hundred exercises. Real scenarios for every one. If you've worked through these, you have the foundation of a real Linux sysadmin — and far more depth than any single intro course tests.
 
 Where to go next:
 

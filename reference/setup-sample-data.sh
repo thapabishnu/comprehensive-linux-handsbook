@@ -1,9 +1,9 @@
 #!/bin/bash
-# NCS 205 mentor's guide — practice sandbox setup
-# Creates ~/ncs205-sandbox with the files used by drills throughout the handbook.
+# Linux mentor handbook — practice sandbox setup
+# Creates ~/linux-sandbox with the files used by drills throughout the handbook.
 set -euo pipefail
 
-SANDBOX="$HOME/ncs205-sandbox"
+SANDBOX="$HOME/linux-sandbox"
 echo "Creating practice sandbox at $SANDBOX"
 mkdir -p "$SANDBOX"
 cd "$SANDBOX"

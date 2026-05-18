@@ -1,7 +1,6 @@
 # 01 — The shell, SSH, and what your prompt is telling you
 
 > *Prerequisites:* you've done [`00-orientation.md`](00-orientation.md) and have a working Linux shell.
-> *Maps to:* NCS 205 Lab 1, Lab 2 (Q1), parts of Lab 64.
 
 ---
 
@@ -209,7 +208,7 @@ If `ls -al /etc/passw<Tab>` doesn't complete, the file you think exists doesn't.
 
 ### Password change requires you to type your **current** password first
 
-`passwd` asks for your current password first, then the new one twice. Get the current one wrong and it just bails — no harm done. On the class server, the first time you run `passwd` may force you to change it.
+`passwd` asks for your current password first, then the new one twice. Get the current one wrong and it just bails — no harm done. On many shared servers — especially the first time you log into a new account — the system may force you to change your password before letting you continue.
 
 ---
 
@@ -307,7 +306,7 @@ passwd
 
 If the system complains "password too similar" or "based on a dictionary word," it's PAM's password-quality module doing its job. Pick something more complex.
 
-**Important:** in the lab worksheet, you need to paste the output of `passwd`. The output won't include the passwords themselves — just lines like "Changing password for yourname / Current password: / New password: / Retype new password: / passwd: password updated successfully". That last line is what proves it worked.
+**Important:** If you ever need to prove `passwd` worked (in a screenshot, audit log, etc.), paste the output. The output won't include the passwords themselves — just lines like "Changing password for yourname / Current password: / New password: / Retype new password: / passwd: password updated successfully". That last line is what proves it worked.
 </details>
 
 ---

@@ -14,7 +14,7 @@ dist/
 .cache/
 
 # Per-user sandbox the setup script creates
-ncs205-sandbox/
+linux-sandbox/
 
 # Local-only env or notes
 .env

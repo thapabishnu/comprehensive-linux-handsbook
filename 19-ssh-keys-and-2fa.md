@@ -1,6 +1,5 @@
 # 19 — SSH keys and 2FA
 
-> *Maps to:* NCS 205 Labs 62–64.
 
 ---
 

@@ -1,6 +1,5 @@
 # 13 — sed and awk
 
-> *Maps to:* NCS 205 Labs 33–35.
 
 ---
 
@@ -154,7 +153,7 @@ That's a complete awk program. Pattern blocks, accumulator, summary at the end. 
 ## 5. Guided walkthrough
 
 ```sh
-cd ~/ncs205-sandbox/text/
+cd ~/linux-sandbox/text/
 
 # --- sed ---
 sed 's/Anderson/Andersen/g' names.txt      # find & replace, no edit yet
@@ -200,7 +199,7 @@ That last one is a one-line *group-by-sum*. In SQL: `SELECT dept, SUM(salary) FR
 <details><summary>Show answer</summary>
 
 ```sh
-sed 's/Anderson/Andersen/g' ~/ncs205-sandbox/text/names.txt
+sed 's/Anderson/Andersen/g' ~/linux-sandbox/text/names.txt
 ```
 
 `/g` ensures every occurrence, not just the first per line.
@@ -222,7 +221,7 @@ Two patterns OR'd inside the address: starts with `#`, or end-of-line right at t
 <details><summary>Show answer</summary>
 
 ```sh
-awk -F',' '{print $2, $4}' ~/ncs205-sandbox/text/employees.csv
+awk -F',' '{print $2, $4}' ~/linux-sandbox/text/employees.csv
 ```
 </details>
 
@@ -231,7 +230,7 @@ awk -F',' '{print $2, $4}' ~/ncs205-sandbox/text/employees.csv
 <details><summary>Show answer</summary>
 
 ```sh
-awk -F',' '$3=="eng" {print $2, $4}' ~/ncs205-sandbox/text/employees.csv
+awk -F',' '$3=="eng" {print $2, $4}' ~/linux-sandbox/text/employees.csv
 ```
 
 You don't need an explicit `if`; the pattern `$3=="eng"` is the condition.
@@ -242,7 +241,7 @@ You don't need an explicit `if`; the pattern `$3=="eng"` is the condition.
 <details><summary>Show answer</summary>
 
 ```sh
-awk -F',' 'NR>1 {sum+=$4; n++} END {print sum/n}' ~/ncs205-sandbox/text/employees.csv
+awk -F',' 'NR>1 {sum+=$4; n++} END {print sum/n}' ~/linux-sandbox/text/employees.csv
 ```
 </details>
 
@@ -276,7 +275,7 @@ The braces group `echo` and `awk` so their combined output is redirected. We'll 
 <details><summary>Show answer</summary>
 
 ```sh
-awk '$6 ~ /"GET/ && $9 == 200 { print $4, $7 }' ~/ncs205-sandbox/text/access.log
+awk '$6 ~ /"GET/ && $9 == 200 { print $4, $7 }' ~/linux-sandbox/text/access.log
 ```
 
 `~` is "matches regex." `$6` is the start of the request quote, `$9` is the status. Common log format makes this trivial.

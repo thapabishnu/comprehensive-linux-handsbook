@@ -1,6 +1,5 @@
 # 07 — Permissions
 
-> *Maps to:* NCS 205 Labs 16–18.
 
 ---
 

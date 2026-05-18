@@ -1,6 +1,5 @@
 # 20 — git for sysadmins
 
-> *Maps to:* NCS 205 Lab 36.
 
 ---
 

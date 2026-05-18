@@ -1,6 +1,5 @@
 # 12 — The text-processing toolbox
 
-> *Maps to:* NCS 205 Labs 31–32.
 
 ---
 
@@ -95,7 +94,7 @@ Both inputs *must be sorted*. Otherwise the output is garbage.
 | `diff -y a b` | Side-by-side |
 | `diff -r dir1 dir2` | Recursive directory diff |
 
-Pair with `patch` to apply diffs — but that's beyond NCS 205.
+Pair with `patch` to apply diffs — but that's beyond this guide.
 
 ### Honorable mentions
 
@@ -110,7 +109,7 @@ Pair with `patch` to apply diffs — but that's beyond NCS 205.
 ## 4. Guided walkthrough
 
 ```sh
-cd ~/ncs205-sandbox/text/
+cd ~/linux-sandbox/text/
 
 # cut — extract the salary column from the CSV
 cut -d',' -f4 employees.csv
@@ -172,12 +171,12 @@ diff -u v1.txt v2.txt
 
 ## 6. On-the-spot exercises
 
-**E12.1** — From `~/ncs205-sandbox/text/employees.csv`, print just the names column.
+**E12.1** — From `~/linux-sandbox/text/employees.csv`, print just the names column.
 
 <details><summary>Show answer</summary>
 
 ```sh
-cut -d',' -f2 ~/ncs205-sandbox/text/employees.csv
+cut -d',' -f2 ~/linux-sandbox/text/employees.csv
 ```
 
 To skip the header: pipe through `tail -n +2`.
@@ -188,7 +187,7 @@ To skip the header: pipe through `tail -n +2`.
 <details><summary>Show answer</summary>
 
 ```sh
-cut -d',' -f3 ~/ncs205-sandbox/text/employees.csv | tail -n +2 | sort -u
+cut -d',' -f3 ~/linux-sandbox/text/employees.csv | tail -n +2 | sort -u
 ```
 </details>
 
@@ -197,7 +196,7 @@ cut -d',' -f3 ~/ncs205-sandbox/text/employees.csv | tail -n +2 | sort -u
 <details><summary>Show answer</summary>
 
 ```sh
-cut -d',' -f3 ~/ncs205-sandbox/text/employees.csv | tail -n +2 | sort | uniq -c | sort -rn
+cut -d',' -f3 ~/linux-sandbox/text/employees.csv | tail -n +2 | sort | uniq -c | sort -rn
 ```
 
 `sort | uniq -c | sort -rn` — the most useful pipeline triple in operations work.
@@ -208,7 +207,7 @@ cut -d',' -f3 ~/ncs205-sandbox/text/employees.csv | tail -n +2 | sort | uniq -c 
 <details><summary>Show answer</summary>
 
 ```sh
-cut -d' ' -f1 ~/ncs205-sandbox/text/access.log | sort | uniq -c | sort -rn | head -5
+cut -d' ' -f1 ~/linux-sandbox/text/access.log | sort | uniq -c | sort -rn | head -5
 ```
 </details>
 
@@ -217,7 +216,7 @@ cut -d' ' -f1 ~/ncs205-sandbox/text/access.log | sort | uniq -c | sort -rn | hea
 <details><summary>Show answer</summary>
 
 ```sh
-tr 'a-z' 'A-Z' < ~/ncs205-sandbox/text/lorem.txt
+tr 'a-z' 'A-Z' < ~/linux-sandbox/text/lorem.txt
 ```
 </details>
 
@@ -226,7 +225,7 @@ tr 'a-z' 'A-Z' < ~/ncs205-sandbox/text/lorem.txt
 <details><summary>Show answer</summary>
 
 ```sh
-tr ' ' '\n' < ~/ncs205-sandbox/text/lorem.txt | sort -u | wc -l
+tr ' ' '\n' < ~/linux-sandbox/text/lorem.txt | sort -u | wc -l
 ```
 
 You can refine this — strip punctuation first with `tr -d`, lowercase with `tr 'A-Z' 'a-z'`, etc.

@@ -1,6 +1,5 @@
 # 21 — cron and scheduling
 
-> *Maps to:* NCS 205 Lab A1.
 
 ---
 

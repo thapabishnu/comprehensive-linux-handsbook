@@ -19,7 +19,7 @@
       <span class="mark">/&gt;</span>
       <span>The Mentor's Guide to Linux</span>
     </a>
-    <span class="sub">NCS 205 handbook</span>
+    
   </div>
   <div class="right">
     <span class="crumbs"><a href="index.html" style="color: inherit; border: none;">HOME</a> / <strong>MODULE 12</strong></span>
@@ -37,7 +37,7 @@
     <article class="module">
       <div class="meta-row">
         <span><span class="label">MODULE</span>12</span>
-        <span><span class="label">MAPS TO</span>LABS 31–32</span>
+        
         <span><span class="label">TIME</span>~30 min</span>
       </div>
 
@@ -146,7 +146,7 @@
       </ul>
 
       <h2 id="walkthrough"><span class="secnum">§4</span>Guided walkthrough</h2>
-<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cd ~/ncs205-sandbox/text/
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cd ~/linux-sandbox/text/
 
 <span class="tok-comment"># cut — extract the salary column from the CSV</span>
 <span class="tok-prompt">$ </span>cut -d',' -f4 employees.csv
@@ -219,9 +219,9 @@ quux" &gt; v2.txt
       <h2 id="drills"><span class="secnum">§6</span>On-the-spot exercises</h2>
 
       <div class="exercise">
-        <p><span class="ex-id">E12.1</span>From <code>~/ncs205-sandbox/text/employees.csv</code>, print just the names column.</p>
+        <p><span class="ex-id">E12.1</span>From <code>~/linux-sandbox/text/employees.csv</code>, print just the names column.</p>
         <details class="drill"><summary>Show answer</summary><div class="drill-body">
-<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cut -d',' -f2 ~/ncs205-sandbox/text/employees.csv</code></pre>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cut -d',' -f2 ~/linux-sandbox/text/employees.csv</code></pre>
           <p>To skip the header: pipe through <code>tail -n +2</code>.</p>
         </div></details>
       </div>
@@ -229,14 +229,14 @@ quux" &gt; v2.txt
       <div class="exercise">
         <p><span class="ex-id">E12.2</span>List all unique departments in the CSV.</p>
         <details class="drill"><summary>Show answer</summary><div class="drill-body">
-<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cut -d',' -f3 ~/ncs205-sandbox/text/employees.csv | tail -n +2 | sort -u</code></pre>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cut -d',' -f3 ~/linux-sandbox/text/employees.csv | tail -n +2 | sort -u</code></pre>
         </div></details>
       </div>
 
       <div class="exercise">
         <p><span class="ex-id">E12.3</span>Show the count of employees per department.</p>
         <details class="drill"><summary>Show answer</summary><div class="drill-body">
-<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cut -d',' -f3 ~/ncs205-sandbox/text/employees.csv | tail -n +2 | sort | uniq -c | sort -rn</code></pre>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cut -d',' -f3 ~/linux-sandbox/text/employees.csv | tail -n +2 | sort | uniq -c | sort -rn</code></pre>
           <p><code>sort | uniq -c | sort -rn</code> — the most useful pipeline triple in operations work.</p>
         </div></details>
       </div>
@@ -244,21 +244,21 @@ quux" &gt; v2.txt
       <div class="exercise">
         <p><span class="ex-id">E12.4</span>Top 5 IP addresses in <code>access.log</code> by request count.</p>
         <details class="drill"><summary>Show answer</summary><div class="drill-body">
-<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cut -d' ' -f1 ~/ncs205-sandbox/text/access.log | sort | uniq -c | sort -rn | head -5</code></pre>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cut -d' ' -f1 ~/linux-sandbox/text/access.log | sort | uniq -c | sort -rn | head -5</code></pre>
         </div></details>
       </div>
 
       <div class="exercise">
         <p><span class="ex-id">E12.5</span>Uppercase the contents of <code>lorem.txt</code>.</p>
         <details class="drill"><summary>Show answer</summary><div class="drill-body">
-<pre data-lang="sh"><code><span class="tok-prompt">$ </span>tr 'a-z' 'A-Z' &lt; ~/ncs205-sandbox/text/lorem.txt</code></pre>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>tr 'a-z' 'A-Z' &lt; ~/linux-sandbox/text/lorem.txt</code></pre>
         </div></details>
       </div>
 
       <div class="exercise">
         <p><span class="ex-id">E12.6</span>Replace every space in <code>lorem.txt</code> with a newline, then count distinct words.</p>
         <details class="drill"><summary>Show answer</summary><div class="drill-body">
-<pre data-lang="sh"><code><span class="tok-prompt">$ </span>tr ' ' '\n' &lt; ~/ncs205-sandbox/text/lorem.txt | sort -u | wc -l</code></pre>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>tr ' ' '\n' &lt; ~/linux-sandbox/text/lorem.txt | sort -u | wc -l</code></pre>
         </div></details>
       </div>
 
@@ -311,7 +311,7 @@ quux" &gt; v2.txt
     </article>
 
     <footer class="colophon">
-      <p>NCS 205 handbook · module 12 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
+      <p>Module 12 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
     </footer>
   </main>
 

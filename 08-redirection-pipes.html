@@ -19,7 +19,7 @@
       <span class="mark">/&gt;</span>
       <span>The Mentor's Guide to Linux</span>
     </a>
-    <span class="sub">NCS 205 handbook</span>
+    
   </div>
   <div class="right">
     <span class="crumbs"><a href="index.html" style="color: inherit; border: none;">HOME</a> / <strong>MODULE 08</strong></span>
@@ -37,7 +37,7 @@
     <article class="module">
       <div class="meta-row">
         <span><span class="label">MODULE</span>08</span>
-        <span><span class="label">MAPS TO</span>LAB 19</span>
+        
         <span><span class="label">TIME</span>~30 min</span>
       </div>
 
@@ -203,10 +203,10 @@
       <div class="exercise">
         <p><span class="ex-id">E8.6</span>Show all 200 responses from the access.log sandbox, then count them.</p>
         <details class="drill"><summary>Show answer</summary><div class="drill-body">
-<pre data-lang="sh"><code><span class="tok-prompt">$ </span>grep ' 200 ' ~/ncs205-sandbox/text/access.log
-<span class="tok-prompt">$ </span>grep ' 200 ' ~/ncs205-sandbox/text/access.log | wc -l</code></pre>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>grep ' 200 ' ~/linux-sandbox/text/access.log
+<span class="tok-prompt">$ </span>grep ' 200 ' ~/linux-sandbox/text/access.log | wc -l</code></pre>
           <p>Or chain into one display:</p>
-<pre data-lang="sh"><code><span class="tok-prompt">$ </span>grep ' 200 ' ~/ncs205-sandbox/text/access.log | tee /tmp/200s.log | wc -l</code></pre>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>grep ' 200 ' ~/linux-sandbox/text/access.log | tee /tmp/200s.log | wc -l</code></pre>
           <p><code>tee</code> lets you save the matches AND print the count.</p>
         </div></details>
       </div>
@@ -220,9 +220,9 @@
       </div>
 
       <div class="exercise">
-        <p><span class="ex-id">E8.8</span>Without using <code>cat</code>, send the contents of <code>~/ncs205-sandbox/text/names.txt</code> into <code>wc -l</code>.</p>
+        <p><span class="ex-id">E8.8</span>Without using <code>cat</code>, send the contents of <code>~/linux-sandbox/text/names.txt</code> into <code>wc -l</code>.</p>
         <details class="drill"><summary>Show answer</summary><div class="drill-body">
-<pre data-lang="sh"><code><span class="tok-prompt">$ </span>wc -l &lt; ~/ncs205-sandbox/text/names.txt</code></pre>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>wc -l &lt; ~/linux-sandbox/text/names.txt</code></pre>
           <p><code>&lt;</code> redirects the file in as stdin. <code>wc</code> would also accept a filename directly — but <code>&lt;</code> is the <em>redirection</em> form, which is what the exercise asks for.</p>
         </div></details>
       </div>
@@ -230,7 +230,7 @@
       <div class="exercise">
         <p><span class="ex-id">E8.9</span>Build a one-liner: "the 3 most active IPs in the access log."</p>
         <details class="drill"><summary>Show answer</summary><div class="drill-body">
-<pre data-lang="sh"><code><span class="tok-prompt">$ </span>awk '{print $1}' ~/ncs205-sandbox/text/access.log \
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>awk '{print $1}' ~/linux-sandbox/text/access.log \
   | sort | uniq -c | sort -rn | head -3</code></pre>
           <p>5 stages: extract field, sort to group, count duplicates, sort numerically descending, take top 3. We'll meet <code>awk</code> properly in module 13.</p>
         </div></details>
@@ -268,7 +268,7 @@
     </article>
 
     <footer class="colophon">
-      <p>NCS 205 handbook · module 08 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
+      <p>Module 08 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
     </footer>
   </main>
 

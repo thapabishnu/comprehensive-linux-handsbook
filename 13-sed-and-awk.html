@@ -19,7 +19,7 @@
       <span class="mark">/&gt;</span>
       <span>The Mentor's Guide to Linux</span>
     </a>
-    <span class="sub">NCS 205 handbook</span>
+    
   </div>
   <div class="right">
     <span class="crumbs"><a href="index.html" style="color: inherit; border: none;">HOME</a> / <strong>MODULE 13</strong></span>
@@ -37,7 +37,7 @@
     <article class="module">
       <div class="meta-row">
         <span><span class="label">MODULE</span>13</span>
-        <span><span class="label">MAPS TO</span>LABS 33–35</span>
+        
         <span><span class="label">TIME</span>~45 min</span>
       </div>
 
@@ -165,7 +165,7 @@
       <p>Pattern blocks, accumulator, summary at the end. Compare to Python — awk is <em>terse</em>.</p>
 
       <h2 id="walkthrough"><span class="secnum">§5</span>Guided walkthrough</h2>
-<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cd ~/ncs205-sandbox/text/
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cd ~/linux-sandbox/text/
 
 <span class="tok-comment"># --- sed ---</span>
 <span class="tok-prompt">$ </span>sed 's/Anderson/Andersen/g' names.txt
@@ -217,7 +217,7 @@
       <div class="exercise">
         <p><span class="ex-id">E13.1</span>Use <code>sed</code> to replace every <code>Anderson</code> with <code>Andersen</code> in <code>names.txt</code>.</p>
         <details class="drill"><summary>Show answer</summary><div class="drill-body">
-<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sed 's/Anderson/Andersen/g' ~/ncs205-sandbox/text/names.txt</code></pre>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>sed 's/Anderson/Andersen/g' ~/linux-sandbox/text/names.txt</code></pre>
         </div></details>
       </div>
 
@@ -232,14 +232,14 @@
       <div class="exercise">
         <p><span class="ex-id">E13.3</span>Use <code>awk</code> to print just the <em>names</em> and <em>salaries</em> from <code>employees.csv</code>.</p>
         <details class="drill"><summary>Show answer</summary><div class="drill-body">
-<pre data-lang="sh"><code><span class="tok-prompt">$ </span>awk -F',' '{print $2, $4}' ~/ncs205-sandbox/text/employees.csv</code></pre>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>awk -F',' '{print $2, $4}' ~/linux-sandbox/text/employees.csv</code></pre>
         </div></details>
       </div>
 
       <div class="exercise">
         <p><span class="ex-id">E13.4</span>Print only the <em>engineers</em> (department = "eng") with their salaries.</p>
         <details class="drill"><summary>Show answer</summary><div class="drill-body">
-<pre data-lang="sh"><code><span class="tok-prompt">$ </span>awk -F',' '$3=="eng" {print $2, $4}' ~/ncs205-sandbox/text/employees.csv</code></pre>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>awk -F',' '$3=="eng" {print $2, $4}' ~/linux-sandbox/text/employees.csv</code></pre>
           <p>You don't need an explicit <code>if</code>; the pattern <code>$3=="eng"</code> is the condition.</p>
         </div></details>
       </div>
@@ -247,7 +247,7 @@
       <div class="exercise">
         <p><span class="ex-id">E13.5</span>Compute the average salary across all employees.</p>
         <details class="drill"><summary>Show answer</summary><div class="drill-body">
-<pre data-lang="sh"><code><span class="tok-prompt">$ </span>awk -F',' 'NR&gt;1 {sum+=$4; n++} END {print sum/n}' ~/ncs205-sandbox/text/employees.csv</code></pre>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>awk -F',' 'NR&gt;1 {sum+=$4; n++} END {print sum/n}' ~/linux-sandbox/text/employees.csv</code></pre>
         </div></details>
       </div>
 
@@ -273,7 +273,7 @@
       <div class="exercise">
         <p><span class="ex-id">E13.8</span>From <code>access.log</code>, print all GET requests that returned 200, as "TIME PATH".</p>
         <details class="drill"><summary>Show answer</summary><div class="drill-body">
-<pre data-lang="sh"><code><span class="tok-prompt">$ </span>awk '$6 ~ /"GET/ &amp;&amp; $9 == 200 { print $4, $7 }' ~/ncs205-sandbox/text/access.log</code></pre>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>awk '$6 ~ /"GET/ &amp;&amp; $9 == 200 { print $4, $7 }' ~/linux-sandbox/text/access.log</code></pre>
           <p><code>~</code> is "matches regex." Common log format makes this trivial.</p>
         </div></details>
       </div>
@@ -303,7 +303,7 @@
     </article>
 
     <footer class="colophon">
-      <p>NCS 205 handbook · module 13 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
+      <p>Module 13 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
     </footer>
   </main>
 

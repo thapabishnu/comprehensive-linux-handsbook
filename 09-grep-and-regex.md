@@ -1,6 +1,5 @@
 # 09 — grep and regular expressions
 
-> *Maps to:* NCS 205 Labs 20–22.
 
 ---
 
@@ -26,7 +25,7 @@ There are several flavors of regex:
 | **Perl-compat (PCRE)** | `grep -P` | Most powerful; lookaheads, lazy quantifiers, etc. |
 | **Fixed string** | `grep -F` (or `fgrep`) | No regex, fastest, safest when you mean a literal |
 
-For NCS 205 and most daily work, **ERE (`grep -E`)** is the sweet spot. I'll teach you regex in that flavor.
+For most daily work, **ERE (`grep -E`)** is the sweet spot. I'll teach you regex in that flavor.
 
 > **Mentor note:** A pattern is *anchored* (matches at a position) or *floating* (matches anywhere). `^abc` is anchored to the start of a line; `abc` floats. Knowing which you want is half of writing a correct regex.
 
@@ -117,10 +116,10 @@ For NCS 205 and most daily work, **ERE (`grep -E`)** is the sweet spot. I'll tea
 
 ## 5. Guided walkthrough
 
-Use the sandbox at `~/ncs205-sandbox/text/`.
+Use the sandbox at `~/linux-sandbox/text/`.
 
 ```sh
-cd ~/ncs205-sandbox/text/
+cd ~/linux-sandbox/text/
 
 # fixed string
 grep 200 access.log              # any line containing "200"
@@ -149,10 +148,10 @@ grep -E '20[0-9]{1}' access.log  # 200-209
 grep -E ' (4|5)[0-9]{2} ' access.log  # any 4xx or 5xx status
 
 # whole word
-grep -w book ~/ncs205-sandbox/text/lorem.txt    # "book" but not "bookmark"
+grep -w book ~/linux-sandbox/text/lorem.txt    # "book" but not "bookmark"
 
 # count + recursive
-grep -rc TODO ~/ncs205-sandbox/  # how many TODOs per file in the sandbox
+grep -rc TODO ~/linux-sandbox/  # how many TODOs per file in the sandbox
 
 # context
 grep -n -A 1 -B 1 401 access.log # show 1 line before & after every "401" match
@@ -180,14 +179,14 @@ That last line is genuinely useful — `-o` prints only the matched piece, not t
 
 ## 7. On-the-spot exercises
 
-These reference the sandbox files at `~/ncs205-sandbox/text/`.
+These reference the sandbox files at `~/linux-sandbox/text/`.
 
 **E9.1** — In `names.txt`, find every last name beginning with `R`.
 
 <details><summary>Show answer</summary>
 
 ```sh
-grep '^R' ~/ncs205-sandbox/text/names.txt
+grep '^R' ~/linux-sandbox/text/names.txt
 ```
 
 `^` = start of line; the file is "Last, First" so last names *are* at the start.
@@ -215,12 +214,12 @@ grep -c '^book' /usr/share/dict/words
 The `^` anchor turns a substring search into a prefix search.
 </details>
 
-**E9.4** — From `~/ncs205-sandbox/text/access.log`, show all 4xx and 5xx responses (client + server errors).
+**E9.4** — From `~/linux-sandbox/text/access.log`, show all 4xx and 5xx responses (client + server errors).
 
 <details><summary>Show answer</summary>
 
 ```sh
-grep -E ' (4|5)[0-9]{2} ' ~/ncs205-sandbox/text/access.log
+grep -E ' (4|5)[0-9]{2} ' ~/linux-sandbox/text/access.log
 ```
 
 The leading and trailing spaces avoid matching "401" inside a longer number.
@@ -270,7 +269,7 @@ grep -nE '^[[:space:]]*export ' ~/.bashrc
 <details><summary>Show answer</summary>
 
 ```sh
-grep -oE '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' ~/ncs205-sandbox/text/access.log | sort -u
+grep -oE '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' ~/linux-sandbox/text/access.log | sort -u
 ```
 
 `-o` prints only the matched piece. `^` anchors to start so we don't match status codes that happen to look IP-ish. `sort -u` deduplicates.
@@ -281,7 +280,7 @@ grep -oE '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' ~/ncs205-sandbox/text/access.log | so
 <details><summary>Show answer</summary>
 
 ```sh
-grep regex ~/ncs205-sandbox/text/lorem.txt | grep pattern
+grep regex ~/linux-sandbox/text/lorem.txt | grep pattern
 ```
 
 Easiest to express as two greps. There's no AND in regex itself — chain greps via a pipe.

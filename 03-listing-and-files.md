@@ -1,6 +1,5 @@
 # 03 — Listing files and not deleting prod
 
-> *Maps to:* NCS 205 Labs 5–9.
 
 ---
 

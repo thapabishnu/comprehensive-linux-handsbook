@@ -1,6 +1,5 @@
 # 18 — Networking basics
 
-> *Maps to:* NCS 205 Lab 61.
 
 ---
 

@@ -19,7 +19,7 @@
       <span class="mark">/&gt;</span>
       <span>The Mentor's Guide to Linux</span>
     </a>
-    <span class="sub">NCS 205 handbook</span>
+    
   </div>
   <div class="right">
     <span class="crumbs"><a href="index.html" style="color: inherit; border: none;">HOME</a> / <strong>MODULE 00</strong></span>
@@ -40,7 +40,7 @@
 
       <div class="meta-row">
         <span><span class="label">MODULE</span>00</span>
-        <span><span class="label">MAPS TO</span>—</span>
+        
         <span><span class="label">TIME</span>~25 min</span>
       </div>
 
@@ -74,12 +74,9 @@
       <h3>Option C — A cloud VPS</h3>
       <p>DigitalOcean, Linode, Vultr, Hetzner, AWS Lightsail — any of them. A $5/month box is plenty for everything in this guide. Pick <strong>Ubuntu 22.04 LTS</strong> or <strong>Debian 12</strong>.</p>
 
-      <h3>Option D — The class shell server (<code>lab.ncs205.net</code>)</h3>
-      <p>If you're enrolled, you have an account. SSH in with the credentials from your instructor. The labs reference paths under <code>/opt/pub/ncs205/...</code> that only exist on that server — for those, you'll need to be logged in there. <strong>Everything else in this guide works on any Linux.</strong></p>
-
       <div class="callout callout-mentor">
         <span class="callout-label">Mentor note</span>
-        <p>I recommend Option A <em>and</em> Option D. Use WSL for daily practice (instant, offline, you can break it freely). Use the class server when a specific lab requires it.</p>
+        <p>I recommend Option A for daily practice — WSL is instant, offline, and you can break it freely on your laptop. If you also have a cloud VPS (Option C), use it later for anything that involves real networking or systemd timers.</p>
       </div>
 
       <h2 id="sanity"><span class="secnum">§3</span>First sanity check</h2>
@@ -95,10 +92,10 @@
       <p>Save this as <code>~/setup-sample-data.sh</code> (we'll cover how to create files properly in module 03 — for now just paste it in via <code>nano ~/setup-sample-data.sh</code>, then save with <kbd>Ctrl</kbd>+<kbd>O</kbd> <kbd>Enter</kbd> <kbd>Ctrl</kbd>+<kbd>X</kbd>):</p>
 
 <pre data-lang="bash"><code><span class="tok-comment">#!/bin/bash</span>
-<span class="tok-comment"># NCS 205 mentor's guide — practice sandbox setup</span>
+<span class="tok-comment"># Linux mentor handbook — practice sandbox setup</span>
 set -euo pipefail
 
-SANDBOX="$HOME/ncs205-sandbox"
+SANDBOX="$HOME/linux-sandbox"
 echo "Creating practice sandbox at $SANDBOX"
 mkdir -p "$SANDBOX"
 cd "$SANDBOX"
@@ -190,7 +187,7 @@ echo "Done. Explore with:  cd $SANDBOX &amp;&amp; ls -R"</code></pre>
       <p>Then run it:</p>
 <pre data-lang="sh"><code><span class="tok-prompt">$ </span>chmod +x ~/setup-sample-data.sh
 <span class="tok-prompt">$ </span>~/setup-sample-data.sh</code></pre>
-      <p>You should see <code>~/ncs205-sandbox/</code> with <code>globbing/</code>, <code>text/</code>, and <code>tree/</code> subdirectories. <strong>Every drill in this guide assumes that sandbox exists.</strong> If you delete it or move it, just re-run the script.</p>
+      <p>You should see <code>~/linux-sandbox/</code> with <code>globbing/</code>, <code>text/</code>, and <code>tree/</code> subdirectories. <strong>Every drill in this guide assumes that sandbox exists.</strong> If you delete it or move it, just re-run the script.</p>
 
       <h2 id="mindset"><span class="secnum">§5</span>The sysadmin mindset, in five rules</h2>
       <p>I'll mention these often. Tattoo them in:</p>
@@ -310,7 +307,7 @@ Hello, Linux.
       <h2 id="recap"><span class="secnum">§9</span>What to remember</h2>
       <ul>
         <li>You need a real Linux environment. WSL on this Windows box is the fastest path.</li>
-        <li>The <code>~/ncs205-sandbox/</code> is set up — keep it; every drill uses it.</li>
+        <li>The <code>~/linux-sandbox/</code> is set up — keep it; every drill uses it.</li>
         <li>The five rules: read the error, know where you are, look before you leap, smallest change first, leave a trail.</li>
         <li>"Who am I? Where am I? What am I doing?" — the opening of every troubleshooting session.</li>
       </ul>
@@ -324,7 +321,7 @@ Hello, Linux.
     </article>
 
     <footer class="colophon">
-      <p>NCS 205 handbook · module 00 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
+      <p>Module 00 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
     </footer>
 
   </main>

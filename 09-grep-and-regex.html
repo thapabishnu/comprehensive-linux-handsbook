@@ -19,7 +19,7 @@
       <span class="mark">/&gt;</span>
       <span>The Mentor's Guide to Linux</span>
     </a>
-    <span class="sub">NCS 205 handbook</span>
+    
   </div>
   <div class="right">
     <span class="crumbs"><a href="index.html" style="color: inherit; border: none;">HOME</a> / <strong>MODULE 09</strong></span>
@@ -37,7 +37,7 @@
     <article class="module">
       <div class="meta-row">
         <span><span class="label">MODULE</span>09</span>
-        <span><span class="label">MAPS TO</span>LABS 20–22</span>
+        
         <span><span class="label">TIME</span>~40 min</span>
       </div>
 
@@ -64,7 +64,7 @@
           <tr><td><strong>Fixed string</strong></td><td><code>grep -F</code> (or <code>fgrep</code>)</td><td>No regex, fastest, safest when you mean a literal</td></tr>
         </tbody>
       </table>
-      <p>For NCS 205 and most daily work, <strong>ERE (<code>grep -E</code>)</strong> is the sweet spot.</p>
+      <p>For most daily work, <strong>ERE (<code>grep -E</code>)</strong> is the sweet spot.</p>
 
       <div class="callout callout-mentor">
         <span class="callout-label">Mentor note · anchored vs floating</span>
@@ -165,7 +165,7 @@
       </div>
 
       <h2 id="walkthrough"><span class="secnum">§5</span>Guided walkthrough</h2>
-<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cd ~/ncs205-sandbox/text/
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cd ~/linux-sandbox/text/
 
 <span class="tok-comment"># fixed string</span>
 <span class="tok-prompt">$ </span>grep 200 access.log              <span class="tok-comment"># any line containing "200"</span>
@@ -189,10 +189,10 @@
 <span class="tok-prompt">$ </span>grep -E ' (4|5)[0-9]{2} ' access.log
 
 <span class="tok-comment"># whole word</span>
-<span class="tok-prompt">$ </span>grep -w book ~/ncs205-sandbox/text/lorem.txt
+<span class="tok-prompt">$ </span>grep -w book ~/linux-sandbox/text/lorem.txt
 
 <span class="tok-comment"># count + recursive</span>
-<span class="tok-prompt">$ </span>grep -rc TODO ~/ncs205-sandbox/
+<span class="tok-prompt">$ </span>grep -rc TODO ~/linux-sandbox/
 
 <span class="tok-comment"># context</span>
 <span class="tok-prompt">$ </span>grep -n -A 1 -B 1 401 access.log
@@ -233,7 +233,7 @@
       <div class="exercise">
         <p><span class="ex-id">E9.1</span>In <code>names.txt</code>, find every last name beginning with <code>R</code>.</p>
         <details class="drill"><summary>Show answer</summary><div class="drill-body">
-<pre data-lang="sh"><code><span class="tok-prompt">$ </span>grep '^R' ~/ncs205-sandbox/text/names.txt</code></pre>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>grep '^R' ~/linux-sandbox/text/names.txt</code></pre>
           <p><code>^</code> = start of line.</p>
         </div></details>
       </div>
@@ -255,7 +255,7 @@
       <div class="exercise">
         <p><span class="ex-id">E9.4</span>From <code>access.log</code>, show all 4xx and 5xx responses.</p>
         <details class="drill"><summary>Show answer</summary><div class="drill-body">
-<pre data-lang="sh"><code><span class="tok-prompt">$ </span>grep -E ' (4|5)[0-9]{2} ' ~/ncs205-sandbox/text/access.log</code></pre>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>grep -E ' (4|5)[0-9]{2} ' ~/linux-sandbox/text/access.log</code></pre>
           <p>Leading/trailing spaces avoid matching "401" inside a longer number.</p>
         </div></details>
       </div>
@@ -285,7 +285,7 @@
       <div class="exercise">
         <p><span class="ex-id">E9.8</span>Extract just the unique IP addresses from <code>access.log</code>.</p>
         <details class="drill"><summary>Show answer</summary><div class="drill-body">
-<pre data-lang="sh"><code><span class="tok-prompt">$ </span>grep -oE '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' ~/ncs205-sandbox/text/access.log | sort -u</code></pre>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>grep -oE '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' ~/linux-sandbox/text/access.log | sort -u</code></pre>
           <p><code>-o</code> prints only the matched piece. <code>sort -u</code> deduplicates.</p>
         </div></details>
       </div>
@@ -293,7 +293,7 @@
       <div class="exercise">
         <p><span class="ex-id">E9.9</span>In <code>lorem.txt</code>, find lines containing <em>both</em> <code>regex</code> and <code>pattern</code>.</p>
         <details class="drill"><summary>Show answer</summary><div class="drill-body">
-<pre data-lang="sh"><code><span class="tok-prompt">$ </span>grep regex ~/ncs205-sandbox/text/lorem.txt | grep pattern</code></pre>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>grep regex ~/linux-sandbox/text/lorem.txt | grep pattern</code></pre>
           <p>No AND in regex — chain greps via a pipe.</p>
         </div></details>
       </div>
@@ -335,7 +335,7 @@
     </article>
 
     <footer class="colophon">
-      <p>NCS 205 handbook · module 09 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
+      <p>Module 09 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
     </footer>
   </main>
 

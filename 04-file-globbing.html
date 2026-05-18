@@ -19,7 +19,7 @@
       <span class="mark">/&gt;</span>
       <span>The Mentor's Guide to Linux</span>
     </a>
-    <span class="sub">NCS 205 handbook</span>
+    
   </div>
   <div class="right">
     <span class="crumbs"><a href="index.html" style="color: inherit; border: none;">HOME</a> / <strong>MODULE 04</strong></span>
@@ -37,7 +37,7 @@
     <article class="module">
       <div class="meta-row">
         <span><span class="label">MODULE</span>04</span>
-        <span><span class="label">MAPS TO</span>LAB 10</span>
+        
         <span><span class="label">TIME</span>~25 min</span>
       </div>
 
@@ -87,8 +87,8 @@
       </ul>
 
       <h2 id="walkthrough"><span class="secnum">§4</span>Guided walkthrough</h2>
-      <p>The orientation sandbox at <code>~/ncs205-sandbox/globbing/</code> was created for this. If you skipped that, re-run <code>~/setup-sample-data.sh</code>.</p>
-<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cd ~/ncs205-sandbox/globbing/
+      <p>The orientation sandbox at <code>~/linux-sandbox/globbing/</code> was created for this. If you skipped that, re-run <code>~/setup-sample-data.sh</code>.</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>cd ~/linux-sandbox/globbing/
 <span class="tok-prompt">$ </span>ls                            <span class="tok-comment"># baseline view of the test files</span>
 <span class="tok-prompt">$ </span>echo ---
 <span class="tok-prompt">$ </span>ls A*                         <span class="tok-comment"># everything starting with A</span>
@@ -179,10 +179,10 @@ node-1.example.com node-2.example.com node-3.example.com
       </div>
 
       <div class="exercise">
-        <p><span class="ex-id">E4.6</span>List all PDF files in <code>/opt/pub/ncs205/submit/collected/</code> (class shell server only) with <code>lab2</code> in the name.</p>
+        <p><span class="ex-id">E4.6</span>List all PDF files in <code>~/Downloads/</code> whose name contains <code>2024</code>.</p>
         <details class="drill"><summary>Show answer</summary><div class="drill-body">
-<pre data-lang="sh"><code><span class="tok-prompt">$ </span>ls /opt/pub/ncs205/submit/collected/*lab2*.pdf</code></pre>
-          <p>The two <code>*</code> wildcards let the lab number sit anywhere in the filename.</p>
+<pre data-lang="sh"><code><span class="tok-prompt">$ </span>ls ~/Downloads/*2024*.pdf</code></pre>
+          <p>The two <code>*</code> wildcards let the <code>2024</code> token sit anywhere in the filename.</p>
         </div></details>
       </div>
 
@@ -254,7 +254,7 @@ node-1.example.com node-2.example.com node-3.example.com
     </article>
 
     <footer class="colophon">
-      <p>NCS 205 handbook · module 04 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
+      <p>Module 04 of 22 · <a href="index.html" style="color: inherit;">back to home</a></p>
     </footer>
   </main>
 

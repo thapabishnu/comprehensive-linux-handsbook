@@ -1,6 +1,5 @@
 # 08 — Redirection and pipes
 
-> *Maps to:* NCS 205 Lab 19.
 
 ---
 
@@ -182,14 +181,14 @@ You're using globbing (mod 04) + a pipe + `wc`.
 <details><summary>Show answer</summary>
 
 ```sh
-grep ' 200 ' ~/ncs205-sandbox/text/access.log
-grep ' 200 ' ~/ncs205-sandbox/text/access.log | wc -l
+grep ' 200 ' ~/linux-sandbox/text/access.log
+grep ' 200 ' ~/linux-sandbox/text/access.log | wc -l
 ```
 
 Or chain into one display:
 
 ```sh
-grep ' 200 ' ~/ncs205-sandbox/text/access.log | tee /tmp/200s.log | wc -l
+grep ' 200 ' ~/linux-sandbox/text/access.log | tee /tmp/200s.log | wc -l
 ```
 
 `tee` lets you save the matches AND print the count.
@@ -206,12 +205,12 @@ find /etc -name '*host*' 2>/dev/null
 `2>/dev/null` is the classic noise filter. `/dev/null` is the bit bucket — anything sent there is destroyed.
 </details>
 
-**E8.8** — Without using `cat`, send the contents of `~/ncs205-sandbox/text/names.txt` into `wc -l`.
+**E8.8** — Without using `cat`, send the contents of `~/linux-sandbox/text/names.txt` into `wc -l`.
 
 <details><summary>Show answer</summary>
 
 ```sh
-wc -l < ~/ncs205-sandbox/text/names.txt
+wc -l < ~/linux-sandbox/text/names.txt
 ```
 
 `<` redirects the file in as stdin. You can also just give `wc` the filename — but `<` is the *redirection* form, which is what the exercise is asking for.
@@ -222,7 +221,7 @@ wc -l < ~/ncs205-sandbox/text/names.txt
 <details><summary>Show answer</summary>
 
 ```sh
-awk '{print $1}' ~/ncs205-sandbox/text/access.log \
+awk '{print $1}' ~/linux-sandbox/text/access.log \
   | sort | uniq -c | sort -rn | head -3
 ```
 

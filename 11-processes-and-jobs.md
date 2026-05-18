@@ -1,6 +1,5 @@
 # 11 — Processes and jobs
 
-> *Maps to:* NCS 205 Labs 24–26.
 
 ---
 

@@ -1,6 +1,5 @@
 # 16 — Users, groups, and sudo
 
-> *Maps to:* NCS 205 Labs 57–58.
 
 ---
 

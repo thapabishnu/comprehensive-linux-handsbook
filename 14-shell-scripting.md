@@ -1,6 +1,5 @@
 # 14 — Shell scripting
 
-> *Maps to:* NCS 205 Labs 51–55.
 
 ---
 

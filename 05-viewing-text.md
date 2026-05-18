@@ -1,6 +1,5 @@
 # 05 — Viewing text files
 
-> *Maps to:* NCS 205 Labs 11–13.
 
 ---
 
@@ -63,7 +62,7 @@ The last point is the *Useless Use of Cat* award. A surprising amount of "Unix s
 ## 4. Guided walkthrough
 
 ```sh
-cd ~/ncs205-sandbox/text/
+cd ~/linux-sandbox/text/
 
 cat lorem.txt              # short file — fine
 wc -l access.log
@@ -100,12 +99,12 @@ fg          # bring tail -f back; Ctrl+C to stop
 
 ## 6. On-the-spot exercises
 
-**E5.1** — Show only the first 5 lines of `~/ncs205-sandbox/text/access.log`.
+**E5.1** — Show only the first 5 lines of `~/linux-sandbox/text/access.log`.
 
 <details><summary>Show answer</summary>
 
 ```sh
-head -n 5 ~/ncs205-sandbox/text/access.log
+head -n 5 ~/linux-sandbox/text/access.log
 ```
 
 (`head -5` also works on most systems but is deprecated by POSIX.)
@@ -122,12 +121,12 @@ wc -l /etc/passwd
 That number is roughly how many user accounts exist on this box — including system accounts.
 </details>
 
-**E5.3** — Show only the last 3 entries from `~/ncs205-sandbox/text/access.log`.
+**E5.3** — Show only the last 3 entries from `~/linux-sandbox/text/access.log`.
 
 <details><summary>Show answer</summary>
 
 ```sh
-tail -n 3 ~/ncs205-sandbox/text/access.log
+tail -n 3 ~/linux-sandbox/text/access.log
 ```
 </details>
 

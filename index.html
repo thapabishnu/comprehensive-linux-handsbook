@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>The Mentor's Guide to Linux — NCS 205</title>
-<meta name="description" content="A learn-by-doing companion to the SUNY Poly NCS 205 lab worksheets. Concept, walkthrough, drills, and real-world sysadmin scenarios for every topic." />
+<title>The Mentor's Guide to Linux</title>
+<meta name="description" content="A learn-by-doing Linux handbook. Concept, walkthrough, drills, and real-world sysadmin scenarios for every topic." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="assets/styles.css" />
@@ -17,7 +17,7 @@
   <div class="brand">
     <span class="mark">/&gt;</span>
     <span>The Mentor's Guide to Linux</span>
-    <span class="sub">NCS 205 handbook</span>
+    
   </div>
   <div class="right">
     <span class="crumbs"><strong>HOME</strong></span>
@@ -35,17 +35,17 @@
   <main class="main" id="main">
 
     <section class="hero">
-      <div class="kicker">SUNY Polytechnic · NCS 205 · Spring 2026 companion</div>
+      <div class="kicker">A LEARN-BY-DOING LINUX HANDBOOK</div>
       <h1>The Mentor's Guide<br/>to Linux.</h1>
-      <p class="tagline">The labs ask you to <em>prove</em> you know Linux.<br/>This guide teaches you Linux.</p>
+      <p class="tagline">A learn-by-doing Linux handbook — 23 modules, hundreds of drills.</p>
     </section>
 
     <article>
 
       <h2 id="who">Who this is for</h2>
-      <p>You. The student staring at a PDF that says <em>"What does <code>ls -ld /var/</code> do?"</em> with no textbook, no slides, and a half-broken video.</p>
+      <p>Anyone trying to genuinely understand Linux from the command line up — students, junior sysadmins, developers tired of copy-pasting from Stack Overflow without knowing why it works.</p>
       <p>I'll be your mentor. We go slow where it matters, fast where it doesn't, and every concept ends with <strong>drills you can run in your terminal right now</strong> and a <strong>real-world sysadmin scenario</strong> so you see how this stuff shows up on the job.</p>
-      <p>Finish the guide and the labs and you won't just pass NCS 205 — you'll have the foundation that senior Linux engineers operate on every day.</p>
+      <p>Finish the guide and you'll have the foundation that senior Linux engineers operate on every day.</p>
 
       <h2 id="how">How to use this guide</h2>
       <ol>
@@ -53,7 +53,7 @@
         <li><strong>Work the modules in order.</strong> They build on each other.</li>
         <li><strong>Do the drills as you read.</strong> Try them <em>before</em> expanding the answer.</li>
         <li><strong>Read the sysadmin scenario at the end.</strong> That's the bridge from "memorized" to "I can fix things."</li>
-        <li><strong>Then attempt the matching lab PDFs.</strong> Each module says which lab numbers it prepares you for.</li>
+        <li><strong>Then attempt your own problems.</strong> The point of every drill is that the <em>next</em> one becomes obvious.</li>
       </ol>
 
       <div class="section-head">
@@ -70,42 +70,42 @@
           <span class="body">A working Linux box, the sandbox we'll use for drills, the sysadmin mindset.</span>
         </a>
         <a class="module-card" href="01-shell-and-ssh.html">
-          <span class="num">MODULE 01 · LABS 1–2, 64</span>
+          <span class="num">MODULE 01</span>
           <span class="ttl">Shell access &amp; SSH</span>
           <span class="body">Log into a remote box, read your prompt, manage sessions, transfer files.</span>
         </a>
         <a class="module-card" href="02-filesystem-navigation.html">
-          <span class="num">MODULE 02 · LABS 2, 5</span>
+          <span class="num">MODULE 02</span>
           <span class="ttl">Filesystem navigation</span>
           <span class="body">Move around any Unix system without getting lost. FHS, paths, home, dotfiles.</span>
         </a>
         <a class="module-card" href="03-listing-and-files.html">
-          <span class="num">MODULE 03 · LABS 5–9</span>
+          <span class="num">MODULE 03</span>
           <span class="ttl">Listing &amp; file operations</span>
           <span class="body">Inspect, copy, move, rename, link, delete files — safely.</span>
         </a>
         <a class="module-card" href="04-file-globbing.html">
-          <span class="num">MODULE 04 · LAB 10</span>
+          <span class="num">MODULE 04</span>
           <span class="ttl">File globbing</span>
           <span class="body">Match files with <code>*</code>, <code>?</code>, <code>[]</code>, <code>{}</code> like a pro.</span>
         </a>
         <a class="module-card" href="05-viewing-text.html">
-          <span class="num">MODULE 05 · LABS 11–13</span>
+          <span class="num">MODULE 05</span>
           <span class="ttl">Viewing text files</span>
           <span class="body">Read big files, page through logs, peek at heads/tails.</span>
         </a>
         <a class="module-card" href="06-vi-editor.html">
-          <span class="num">MODULE 06 · LABS 14–15</span>
+          <span class="num">MODULE 06</span>
           <span class="ttl">The vi / vim editor</span>
           <span class="body">Survive in vi, edit confidently, leave the editor when you mean to.</span>
         </a>
         <a class="module-card" href="07-permissions.html">
-          <span class="num">MODULE 07 · LABS 16–18</span>
+          <span class="num">MODULE 07</span>
           <span class="ttl">Permissions</span>
           <span class="body">rwx, octal, chmod, chown, umask, setuid, sticky bits.</span>
         </a>
         <a class="module-card" href="08-redirection-pipes.html">
-          <span class="num">MODULE 08 · LAB 19</span>
+          <span class="num">MODULE 08</span>
           <span class="ttl">Redirection &amp; pipes</span>
           <span class="body">Wire commands together; control stdin, stdout, stderr.</span>
         </a>
@@ -115,27 +115,27 @@
       <p style="color: var(--text-muted); font-style: italic; margin-top: -0.4em;">The Unix philosophy in action — small tools, pipelines, text as the universal interface.</p>
       <div class="module-grid">
         <a class="module-card" href="09-grep-and-regex.html">
-          <span class="num">MODULE 09 · LABS 20–22</span>
+          <span class="num">MODULE 09</span>
           <span class="ttl">grep &amp; regular expressions</span>
           <span class="body">Search anything; read regex without panic.</span>
         </a>
         <a class="module-card" href="10-find-and-xargs.html">
-          <span class="num">MODULE 10 · LAB 23</span>
+          <span class="num">MODULE 10</span>
           <span class="ttl">find &amp; xargs</span>
           <span class="body">Locate files by any criterion; run actions on them.</span>
         </a>
         <a class="module-card" href="11-processes-and-jobs.html">
-          <span class="num">MODULE 11 · LABS 24–26</span>
+          <span class="num">MODULE 11</span>
           <span class="ttl">Processes &amp; jobs</span>
           <span class="body">Inspect, signal, background, and kill processes.</span>
         </a>
         <a class="module-card" href="12-text-toolbox.html">
-          <span class="num">MODULE 12 · LABS 31–32</span>
+          <span class="num">MODULE 12</span>
           <span class="ttl">Text-processing toolbox</span>
           <span class="body">cut, sort, uniq, tr, paste — composable filter pipelines.</span>
         </a>
         <a class="module-card" href="13-sed-and-awk.html">
-          <span class="num">MODULE 13 · LABS 33–35</span>
+          <span class="num">MODULE 13</span>
           <span class="ttl">sed &amp; awk</span>
           <span class="body">Transform text streams declaratively. The original data tools.</span>
         </a>
@@ -145,47 +145,47 @@
       <p style="color: var(--text-muted); font-style: italic; margin-top: -0.4em;">Real work. Real boxes. Things that page you at 3 AM.</p>
       <div class="module-grid">
         <a class="module-card" href="14-shell-scripting.html">
-          <span class="num">MODULE 14 · LABS 51–55</span>
+          <span class="num">MODULE 14</span>
           <span class="ttl">Shell scripting</span>
           <span class="body">Write portable bash with logic, arguments, exit codes.</span>
         </a>
         <a class="module-card" href="15-env-and-startup.html">
-          <span class="num">MODULE 15 · LAB 56</span>
+          <span class="num">MODULE 15</span>
           <span class="ttl">Environment &amp; startup</span>
           <span class="body">Tame <code>PATH</code>, aliases, and shell startup order.</span>
         </a>
         <a class="module-card" href="16-users-and-admin.html">
-          <span class="num">MODULE 16 · LABS 57–58</span>
+          <span class="num">MODULE 16</span>
           <span class="ttl">Users &amp; admin</span>
           <span class="body">Manage users, groups, and <code>sudo</code> like a sysadmin.</span>
         </a>
         <a class="module-card" href="17-services-systemd.html">
-          <span class="num">MODULE 17 · LABS 59–60</span>
+          <span class="num">MODULE 17</span>
           <span class="ttl">Services &amp; systemd</span>
           <span class="body">Start/stop/debug services and write unit files.</span>
         </a>
         <a class="module-card" href="18-networking.html">
-          <span class="num">MODULE 18 · LAB 61</span>
+          <span class="num">MODULE 18</span>
           <span class="ttl">Networking basics</span>
           <span class="body">Diagnose connectivity, DNS, ports, HTTP from the shell.</span>
         </a>
         <a class="module-card" href="19-ssh-keys-and-2fa.html">
-          <span class="num">MODULE 19 · LABS 62–64</span>
+          <span class="num">MODULE 19</span>
           <span class="ttl">SSH keys &amp; 2FA</span>
           <span class="body">Passwordless SSH and Google Authenticator hardening.</span>
         </a>
         <a class="module-card" href="20-git-basics.html">
-          <span class="num">MODULE 20 · LAB 36</span>
+          <span class="num">MODULE 20</span>
           <span class="ttl">git for sysadmins</span>
           <span class="body">Version-control configs and scripts.</span>
         </a>
         <a class="module-card" href="21-cron-and-scheduling.html">
-          <span class="num">MODULE 21 · LAB A1</span>
+          <span class="num">MODULE 21</span>
           <span class="ttl">cron &amp; scheduling</span>
           <span class="body">Schedule recurring jobs; understand timer alternatives.</span>
         </a>
         <a class="module-card" href="22-logs-and-troubleshooting.html">
-          <span class="num">MODULE 22 · LABS B1–C1</span>
+          <span class="num">MODULE 22</span>
           <span class="ttl">Logs &amp; troubleshooting</span>
           <span class="body">Read <code>/var/log</code>, <code>journalctl</code>, and triage failing systems.</span>
         </a>
@@ -244,7 +244,7 @@
     </article>
 
     <footer class="colophon">
-      <p>NCS 205 handbook · built for SUNY Polytechnic Institute course materials, Spring 2026.</p>
+      <p>The Mentor's Guide to Linux · a learn-by-doing handbook for the shell.</p>
       <p>Set in Fraunces, Newsreader, and JetBrains Mono. Best read with your hands on a keyboard.</p>
     </footer>
 
